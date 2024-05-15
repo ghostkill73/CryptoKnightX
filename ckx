@@ -1,0 +1,346 @@
+#!/usr/bin/env bash
+#----------------------------------------------------------------------------------+
+# AUTOR : ghostkill <github.com/ghostkill73>
+# VERSÃO: 0.0.1b
+#
+#----------------------------------------------------------------------------------+
+# CryptoKnightX é uma fork!
+# Projeto original de Jefferson Rocha
+# <https://notabug.org/slackjeff/knight>
+#
+#DESCRIÇÃO-------------------------------------------------------------------------+
+# Knight é um programa que cria e oculta uma pasta no diretorio root,
+# Com várias funcionalidades como se estivese no próprio prompt do bash.
+# Knight é totalmente protegido, pessoas "normais" não conseguiram ter acesso,
+# a pasta e muito provavelmente não conseguiram entrar no programa.
+# È necessário passar por várias etapas para logar no Knight e ter acesso a está pasta
+# oculta: inicialização(necessita root), frase secreta, usuário/senha/hostname e
+# verificação root.
+#
+# Se uma das etapas falharem o programa não faz login, simples.
+#
+#MODO-DE-USO-----------------------------------------------------------------------+
+# Rode o arquivo "install.ckx".
+# Ele irá fazer todo processo para instalação do Knight, lembrando que o mesmo
+# não é visivel para usuários comuns com UID >= 1000, o CKX está com permissão 0 e
+# Somente o Root tem acesso ao programa!
+#
+# Outro ponto é que você pode destruir a pasta, também utilizando um comando em
+# linha... para destruir a pasta rode: "ckx --destruction" ou "ckx -d",
+# os arquivos contidos na mesma será apagada! por isso cuidado!
+# Para saber mais sobre o programa, faça login no Knight e use a opção "help".
+#
+#----------------------------------------------------------------------------------+
+# Variáveis
+
+LC_ALL=C; LANG=C # desativa unicodes do input para mais performace
+
+# KEYS
+usuario="root" # <- LOGIN PARA ACESSO DO CKX
+senha="root" # <- SENHA PARA ACESSO DO CKX
+codinome="debian" # <- INSIRA AQUI SEU HOSTNAME ==> uname -n
+
+# CONFIGURAÇÕES
+programa="CryptoKnightX"
+diretorio_raiz="/.rules.d"
+subpasta="41-knight.rules/.ghost"
+diretorio_bin="/usr/bin/ckx"
+versao="0.0.1b"
+
+# COMANDOS
+UNAME="$(uname -n)"
+geeqie_imagem="$(which geeqie 2>&-)"
+mc_editor="$(which mc 2>&-)"
+DEBUG="1" #0 Desligado, 1 Ligado [padrao 1 ligado]
+
+[[ "$EUID" != '0' ]] && exit 1 # verificando root
+
+#----------------------------------------------------------------------------------+
+# Funções
+
+debug() {  #Adicionar em trechos do código, caso precise ligar o debug.
+	[[ "$DEBUG" = '1' ]] && set -x
+}
+
+pwd() { printf '%s\n' "$PWD"; }
+cat() { for file in "$@"; do printf "%s\\n" "$(<"$file")"; done; }
+sleep() { read -rt "$1" <> <(:) || :; }
+clear() { printf '\e[2J\e[H'; }
+die() { printf '\e[41m%s\e[m\n' "$@"; exit 1; }
+
+
+ajuda() {
+cat <<'EOF' | less
+ Manual de ajuda do software CryptoKnightX.
+
+ [!] Digite no terminal 'man <nome-do-comando>' para mais informações
+ sobre os comandos.
+
+ [!] O formato "[A | B]" indica: ou A ou B
+
+ COMANDOS DE LINHA:
+	ckx [--destruction | -d] - destroi toda informação contida na pasta oculta,
+	este comando deve ser utilizado antes de iniciar o programa.
+	Cuidado!! ...
+
+
+ ckx - comando principal do programa.
+	ckx [-v | --version] - exibe a versão atual do Knight.
+
+ help - exibe esta mensagem
+
+ clear | cl - limpa o terminal.
+
+ exit | quit - sai do programa e move os arquivos ocultos para /mnt/.room .
+
+ man - manual padrão do GNU/Linux.
+	o utilitário man exibe informações de comandos contidos no projeto GNU.
+
+ view - utilitário local para vizualizar imagens e arquivos de texto.
+	view [-t | --text] 'nome do arquivo' - vizualiza o texto contido em um arquivo
+	especificado.
+
+	view [-i | --image] 'nome do arquivo' - vizualiza uma imagem especificada.
+
+ rm | remove - remove documentos.
+	rm 'nome do arquivo' - deleta um arquivo.
+
+	rm -r 'nome do diretório' - deleta um diretório recursivamente.
+
+ ls - lista documentos de um diretório.
+ 	ls - lista documentos do diretório atual
+
+ 	ls 'caminho/do/repositório' - lista documentos do diretório especificado no caminho.
+
+ mv | move - move documentos.
+	mv 'nome do documento' 'destino' - move um documento para o destino especificado.
+
+	mv 'nome do documento' 'destino/do/documento' - move um documento
+	para um caminho especificado.
+
+ cd - muda o diretório atual.
+	cd 'nome do diretório' - caminha para um diretório especificado.
+
+	cd 'caminho/do/diretório' - caminha para um diretório em um caminho especificado.
+
+ cp | copy - copia documentos.
+	cp 'nome do documento' 'destino' - copia um documento para o destino especificado.
+
+	cp 'nome do documento' 'destino/do/documento' - copia um documento
+	para um caminho especificado.
+
+ mkdir - cria um diretório.
+	mkdir 'nome do diretório' - cria um diretório no local atual.
+
+	mkdir 'nome1/nome2' - cria um diretório em um diretório já existente.
+
+	mkdir -p 'caminho/para/ser/criado' - cria um diretório com sub-diretórios
+	especificados na ordem.
+
+	mkdir '{nome1,nome2,nome3}' - cria múltiplos diretórios no local atual.
+
+ cat - concatena arquivos de texto.
+	cat 'nome do arquivo' - exibe o conteúdo de um arquivo.
+
+	cat 'nome do arquivo' 'nome de arquivo 2' - exibe o conteúdo dos dois arquivos
+	juntos na ordem dos argumentos.
+
+ pwd - exibe o caminho dos diretórios.
+	pwd - exibe o caminho do diretório atual.
+
+ chmod - configura as permissões de um arquivo.
+	chmod 0 'nome do arquivo' - restringe todo o uso do arquivo para somente o usuário
+	root.
+
+ tar - utiliário para comprimir arquivos.
+	tar -cvf 'nome-do-arquivo-comprimido.tar' 'documento' - compacta um documento
+	em .tar no modo verboso.
+
+	tar -czvf 'nome.tar.gz' 'documento' - compacta um documento para gunzip.
+
+	tar -xvf 'nome.[tar|tar.gz]' - extrai um arquivo compactado.
+
+ zip - utilitário para comprimir arquivos.
+	zip 'arquivo.zip' 'arquivo' - compacta um arquivo para zip.
+
+	zip -r 'arquivo.zip' 'documento' - compacta um diretório recursivamente.
+
+	zip -e 'arquivo.zip' 'documento' - compacta e adiciona uma senha especificada.
+	utilize a opção 'r'(er) somada para compactar recursivamente e adicionar uma
+	senha.
+
+ nano - nano é um editor de arquivos em texto simples e prático.
+	nano 'nome do arquivo' - edita um arquivo. utilize CTRL+S para salvar e
+	CTRL+X para sair, ou, utilize CTRL+O ('letra O de Ônibus') para salvar
+	renomear e sair.
+
+ mc - mc é um gerenciador de arquivos visual no terminal.
+	pressione SHIFT+0 (zero) para sair do programa.
+
+ ssh - conexões secure shell.
+
+ sftp - conexões SSH FTP.
+
+ wget - CKX suporta wget.
+
+
+
+ CryptoKnightX 0.0.1b - Fork feita por ghostkill.
+
+ CryptoKnightX é um fork do projeto Knight originado
+ de Jefferson Rocha. <https://notabug.org/slackjeff/knight>
+
+ DIGITE "Q" PARA SAIR DESTA TELA.
+EOF
+}
+
+destruir() {
+	find "$diretorio_raiz/$subpasta/" -type f -exec shred -n 50 -uvz {} \;
+}
+
+#----------------------------------------------------------------------------------+
+# Iniciando
+
+chmod 700 /usr/bin/ckx # permissão rwx para root
+
+# Parametros para rodar em linha
+case "$1" in
+	-d|--destruction)
+	[[ -d "$diretorio_raiz/$subpasta" ]] && {
+		find "$diretorio_raiz/$subpasta/" -type f
+
+		read -p $'Destruir arquivos ocultos do CryptoKnightX? (y/n): ' destruir1
+		case "$destruir1" in
+		[yY]*) ;;
+		[nN]*) exit 0 ;;
+		*) die 'Opção inválida...' ;;
+		esac
+
+		read -p $'Certeza? (confirmação) (y/n): ' destruir2
+		case "$destruir2" in
+		[yY]*) destruir ;;
+		[nN]*) exit 0 ;;
+		*) die 'Opção inválida...' ;;
+		esac
+
+		[[ -z "$(find ""$diretorio_raiz"/"$subpasta"" -type f)" ]] && {
+		echo "Os arquivos foram subscritos e apagados com sucesso!"
+		exit 0
+		} || {
+		die 'Algum erro ocorreu ou os arquivos se mantiveram...'
+		}
+	} || {
+	die "$diretorio_raiz/$subpasta não foi encontrado..."
+	}
+	;;
+esac
+
+# Conferindo Frase secreta
+ read -p $'\033[31;1m A valentia de qualquer soldado só se conhece na guerra \033[m' frase_secreta
+ [[ "$frase_secreta" != 'ckx' ]] && exit 1
+
+# quit ou exit no console, descamuflando .room para padrão.
+[[ -d "/mnt/.room" ]] && mv "/mnt/.room" "$diretorio_raiz"
+
+# Pasta não existe? então vamos criar e dar permissão 0.
+[[ ! -d "$diretorio_raiz"/"$subpasta" ]] && {
+	mkdir -p "$diretorio_raiz"/"$subpasta" 2>&-
+	chmod 0 "$diretorio_raiz" && chmod 0 "$diretorio_raiz"/"$subpasta"
+}
+
+#----------------------------------------------------------------------------------+
+# Login
+
+func_login(){
+ clear
+   read -sp "Usuário: " fazer_login
+   read -sp "Senha: " fazer_password
+   read -sp "Confirme sua senha: " fazer_password
+
+# Vasculhando se todas as informações batem...Se uma não bater não roda.
+[[ "$fazer_login" = "$usuario" ]] && [[ "$fazer_password" = "$senha" ]] && \
+[[ "$UNAME" = "$codinome" ]] && {
+	cd "$diretorio_raiz"/"$subpasta"
+	clear
+	echo -e " =|=======> \033[31;1m Bem vindo ao "$programa" \033[m"
+	} || {
+	clear
+	func_login
+	}
+}
+func_login
+
+#----------------------------------------------------------------------------------+
+# Script
+
+while :; do
+  read -ep $'\033[31;1m>> \033[m' opcao1 opcao2 opcao3 opcao4
+    case "$opcao1" in
+	man | manual) man "$opcao2" ;;
+
+	zip) zip "$opcao2" "$opcao3" "$opcao4" ;;
+
+	unzip) unzip "$opcao2" "$opcao3" "$opcao4" ;;
+
+	mc) mc ;;
+
+	mv | move) mv "$opcao2" "$opcao3" ;;
+
+	cat) cat "$opcao2" "$opcao3" "$opcao4" ;;
+
+	cp | copy) cp "$opcao2" "$opcao3" "$opcao4" ;;
+
+	tar) tar "$opcao2" "$opcao3" "$opcao4" ;;
+
+	cd) cd "$opcao2" ;;
+
+	nano) nano "$opcao2" "$opcao3" ;;
+
+	knight)
+            case $"opcao2" in
+		-v | --version) echo "A versão atual do Knight é: $versao";;
+		*) echo -e "\033[35;1m Digite \"help\" para informações da função knight.\033[0m" ;;
+            esac
+        ;;
+
+	clear | cl) clear ;;
+
+	chmod) chmod "$opcao2" "$opcao3" ;;
+
+	mkdir) mkdir "$opcao2" "$opcao3" ;;
+
+	rm | remove) rm "$opcao2" "$opcao3" 2>&- ;;
+
+	pwd) pwd ;;
+
+	ssh) ssh "$opcao2" "$opcao3" "$opcao4" ;;
+
+	sftp) sftp "$opcao2" "$opcao3" "$opcao4" ;;
+
+	wget) wget "$opcao2" "$opcao3" "$opcao4" ;;
+
+	ls | list) ls --color "$opcao2" "$opcao3" ;;
+
+	view)
+		[[ ! -e "$geeqie_imagem" ]] || [[ ! -e "$mc_editor" ]] && {
+			echo -e "\033[35;1m O software 'MC' ou 'Geeqie' não foi encontrado no sistema.\033[0m"
+			shift
+		}
+		case "$opcao2" in
+			-i | --image) [[ ! -e "$opcao3" ]] && echo -e "\033[35;1m '$opcao3' não existe.\033[m" || \
+			geeqie "$opcao3" ;;
+
+			-t | --text) mcedit "$opcao3" ;;
+
+			*) echo -e "\033[35;1m Digite \"help\" para informações da função view.\033[0m" ;;
+		esac #case $opcao2
+        ;; #view
+
+	help) ajuda ;;
+
+	exit | quit) mv "$diretorio_raiz" "/mnt/.room" && exit 0 ;; # Camuflagem /mnt/.room
+
+	*) echo -e "\033[35;1m Comando não encontrado\033[m" ;;
+
+    esac #fim_case_$opcao1
+done #fim_While_principal
