@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 #----------------------------------------------------------------------------------+
-# AUTOR : ghostkill <github.com/ghostkill73>
-# VERSÃO: 0.0.1b
+# AUTOR  : ghostkill <github.com/ghostkill73>
+# VERSÃO : 0.0.1b
+# LICENSE: GPL-3.0
 #
 #----------------------------------------------------------------------------------+
 # CryptoKnightX é uma fork!
@@ -9,26 +10,8 @@
 # <https://notabug.org/slackjeff/knight>
 #
 #DESCRIÇÃO-------------------------------------------------------------------------+
-# Knight é um programa que cria e oculta uma pasta no diretorio root,
-# Com várias funcionalidades como se estivese no próprio prompt do bash.
-# Knight é totalmente protegido, pessoas "normais" não conseguiram ter acesso,
-# a pasta e muito provavelmente não conseguiram entrar no programa.
-# È necessário passar por várias etapas para logar no Knight e ter acesso a está pasta
-# oculta: inicialização(necessita root), frase secreta, usuário/senha/hostname e
-# verificação root.
 #
-# Se uma das etapas falharem o programa não faz login, simples.
-#
-#MODO-DE-USO-----------------------------------------------------------------------+
-# Rode o arquivo "install.ckx".
-# Ele irá fazer todo processo para instalação do Knight, lembrando que o mesmo
-# não é visivel para usuários comuns com UID >= 1000, o CKX está com permissão 0 e
-# Somente o Root tem acesso ao programa!
-#
-# Outro ponto é que você pode destruir a pasta, também utilizando um comando em
-# linha... para destruir a pasta rode: "ckx --destruction" ou "ckx -d",
-# os arquivos contidos na mesma será apagada! por isso cuidado!
-# Para saber mais sobre o programa, faça login no Knight e use a opção "help".
+# EM PROCESSO
 #
 #----------------------------------------------------------------------------------+
 # Variáveis
@@ -44,7 +27,6 @@ codinome="debian" # <- INSIRA AQUI SEU HOSTNAME ==> uname -n
 programa="CryptoKnightX"
 diretorio_raiz="/.rules.d"
 subpasta="41-knight.rules/.ghost"
-diretorio_bin="/usr/bin/ckx"
 versao="0.0.1b"
 
 # COMANDOS
@@ -54,6 +36,7 @@ mc_editor="$(which mc 2>&-)"
 DEBUG="1" #0 Desligado, 1 Ligado [padrao 1 ligado]
 
 [[ "$EUID" != '0' ]] && exit 1 # verificando root
+chmod 700 /usr/bin/ckx # permissão rwx para root
 
 #----------------------------------------------------------------------------------+
 # Funções
@@ -174,7 +157,7 @@ cat <<'EOF' | less
 	CTRL+X para sair, ou, utilize CTRL+O ('letra O de Ônibus') para salvar
 	renomear e sair.
 
- mc - mc é um gerenciador de arquivos visual no terminal.
+ mc - mc é um gerenciador de arquivos visual em seu terminal.
 	pressione SHIFT+0 (zero) para sair do programa.
 
  ssh - conexões secure shell.
@@ -185,7 +168,7 @@ cat <<'EOF' | less
 
 
 
- CryptoKnightX 0.0.1b - Fork feita por ghostkill.
+ CryptoKnightX - Fork feita por ghostkill.
 
  CryptoKnightX é um fork do projeto Knight originado
  de Jefferson Rocha. <https://notabug.org/slackjeff/knight>
@@ -201,7 +184,6 @@ destruir() {
 #----------------------------------------------------------------------------------+
 # Iniciando
 
-chmod 700 /usr/bin/ckx # permissão rwx para root
 
 # Parametros para rodar em linha
 case "$1" in
@@ -296,9 +278,9 @@ while :; do
 
 	nano) nano "$opcao2" "$opcao3" ;;
 
-	knight)
+	ckx)
             case $"opcao2" in
-		-v | --version) echo "A versão atual do Knight é: $versao";;
+		-v | --version) echo "A versão atual do CryptoKnightX é: $versao";;
 		*) echo -e "\033[35;1m Digite \"help\" para informações da função knight.\033[0m" ;;
             esac
         ;;
