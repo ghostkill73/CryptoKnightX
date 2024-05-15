@@ -10,7 +10,7 @@
 <a href="https://www.gnu.org/software/bash/" target="_blank"><img src="https://badgen.net/badge/Versão/0.0.1b/red"></a>
 </div>
 
-<p align="center"><br>CryptoKnight é um gerenciador de arquivos feito puramente em bash script, o
+<p align="center"><br>CryptoKnightX é um gerenciador de arquivos feito puramente em bash script, o
 objetivo deste programa é manter sua privacidade e integridade de seus documentos.</p>
 <p align="center">Este repositório é uma fork do projeto original de Slackjeff.
 <a href="https://notabug.org/slackjeff/knight" target="_blank">acesse aqui!</a></p>
@@ -34,13 +34,13 @@ o arquivo.</p>
 <h1 align="center">Comandos</h1>
 
 <h3>Comandos de linha:</h3>
-<p><code>ckx [--destruction | -d]</code> - sobrescreve e apaga todos os arquivos contidos na pasta oculta do CKX.</code></p>
+<p><code>ckx [--destruction | -d]</code> - subscreve e apaga todos os arquivos contidos na pasta oculta do CKX.</code></p>
 <br>
 
 <h3>Comandos no sub-shell:</h3>
 
 <pre>
-<code>help - exibe os comandos disponíveis no software</code>
+<code>help - exibe os comandos disponíveis no software.</code>
 </pre>
 
 <pre>
