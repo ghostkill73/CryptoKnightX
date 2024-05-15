@@ -2,11 +2,11 @@
 #----------------------------------------------------------------------------------+
 # AUTOR  : ghostkill <github.com/ghostkill73>
 # VERSÃO : 0.0.1b
-# LICENSE: GPL-3.0
+# LICENÇA: GPL-3.0
 #
 #----------------------------------------------------------------------------------+
 # CryptoKnightX é uma fork!
-# Projeto original de Jefferson Rocha
+# Projeto original de Jefferson Rocha:
 # <https://notabug.org/slackjeff/knight>
 #
 #DESCRIÇÃO-------------------------------------------------------------------------+
@@ -15,8 +15,6 @@
 #
 #----------------------------------------------------------------------------------+
 # Variáveis
-
-LC_ALL=C; LANG=C # desativa unicodes do input para mais performace
 
 # KEYS
 usuario="root" # <- LOGIN PARA ACESSO DO CKX
@@ -48,12 +46,12 @@ debug() {  #Adicionar em trechos do código, caso precise ligar o debug.
 pwd() { printf '%s\n' "$PWD"; }
 cat() { for file in "$@"; do printf "%s\\n" "$(<"$file")"; done; }
 sleep() { read -rt "$1" <> <(:) || :; }
-clear() { printf '\e[2J\e[H'; }
-die() { printf '\e[41m%s\e[m\n' "$@"; exit 1; }
-
+clear() { printf '\033[2J\033[H'; }
+die() { printf '\033[41m%s\033[m\n' "$@"; exit 1; }
+sucess() { printf '\033[1;32m%s\033[m\n' "$@"; }
 
 ajuda() {
-cat <<'EOF' | less
+command cat <<'EOF' | less
  Manual de ajuda do software CryptoKnightX.
 
  [!] Digite no terminal 'man <nome-do-comando>' para mais informações
@@ -68,7 +66,7 @@ cat <<'EOF' | less
 
 
  ckx - comando principal do programa.
-	ckx [-v | --version] - exibe a versão atual do Knight.
+	ckx [-v | --version] - exibe a versão atual do CryptoKnightX.
 
  help - exibe esta mensagem
 
@@ -206,7 +204,7 @@ case "$1" in
 		esac
 
 		[[ -z "$(find ""$diretorio_raiz"/"$subpasta"" -type f)" ]] && {
-		echo "Os arquivos foram subscritos e apagados com sucesso!"
+		sucess 'Os arquivos foram subscritos e apagados com sucesso!'
 		exit 0
 		} || {
 		die 'Algum erro ocorreu ou os arquivos se mantiveram...'
@@ -244,7 +242,7 @@ func_login(){
 [[ "$UNAME" = "$codinome" ]] && {
 	cd "$diretorio_raiz"/"$subpasta"
 	clear
-	echo -e " =|=======> \033[31;1m Bem vindo ao "$programa" \033[m"
+	printf '\033[31;1%s\033[m\n' ' --||==[._\CRYPTOKNIGHTX/_.]==>'
 	} || {
 	clear
 	func_login
@@ -256,73 +254,74 @@ func_login
 # Script
 
 while :; do
-  read -ep $'\033[31;1m>> \033[m' opcao1 opcao2 opcao3 opcao4
+  read -ep $'\033[31;1m[CKX] \033[m' opcao1 opcao2 opcao3 opcao4
     case "$opcao1" in
-	man | manual) man "$opcao2" ;;
+	man | manual) man $opcao2 ;;
 
-	zip) zip "$opcao2" "$opcao3" "$opcao4" ;;
+	zip) zip $opcao2 $opcao3 $opcao4 ;;
 
-	unzip) unzip "$opcao2" "$opcao3" "$opcao4" ;;
+	unzip) unzip $opcao2 $opcao3 $opcao4 ;;
 
 	mc) mc ;;
 
-	mv | move) mv "$opcao2" "$opcao3" ;;
+	mv | move) mv $opcao2 $opcao3 ;;
 
-	cat) cat "$opcao2" "$opcao3" "$opcao4" ;;
+	cat) cat $opcao2 $opcao3 $opcao4 ;;
 
-	cp | copy) cp "$opcao2" "$opcao3" "$opcao4" ;;
+	cp | copy) cp $opcao2 $opcao3 $opcao4 ;;
 
-	tar) tar "$opcao2" "$opcao3" "$opcao4" ;;
+	tar) tar $opcao2 $opcao3 $opcao4 ;;
 
-	cd) cd "$opcao2" ;;
+	cd) cd $opcao2 ;;
 
-	nano) nano "$opcao2" "$opcao3" ;;
+	nano) nano $opcao2 $opcao3 ;;
 
 	ckx)
             case $"opcao2" in
-		-v | --version) echo "A versão atual do CryptoKnightX é: $versao";;
-		*) echo -e "\033[35;1m Digite \"help\" para informações da função knight.\033[0m" ;;
+		-v | --version) printf '%s\n' " A versão atual do CryptoKnightX é: $versao";;
+		*) printf '\033[1;35m%s\033[m\n' " Digite \"help\" para informações." ;;
             esac
         ;;
 
 	clear | cl) clear ;;
 
-	chmod) chmod "$opcao2" "$opcao3" ;;
+	chmod) chmod $opcao2 $opcao3 ;;
 
-	mkdir) mkdir "$opcao2" "$opcao3" ;;
+	mkdir) mkdir $opcao2 $opcao3 ;;
 
-	rm | remove) rm "$opcao2" "$opcao3" 2>&- ;;
+	rm | remove) rm $opcao2 $opcao3 2>&- ;;
 
 	pwd) pwd ;;
 
-	ssh) ssh "$opcao2" "$opcao3" "$opcao4" ;;
+	ssh) ssh $opcao2 $opcao3 $opcao4 ;;
 
-	sftp) sftp "$opcao2" "$opcao3" "$opcao4" ;;
+	sftp) sftp $opcao2 $opcao3 $opcao4 ;;
 
-	wget) wget "$opcao2" "$opcao3" "$opcao4" ;;
+	wget) wget $opcao2 $opcao3 $opcao4 ;;
 
-	ls | list) ls --color "$opcao2" "$opcao3" ;;
+	ls | list) ls --color $opcao2 $opcao3 ;;
 
 	view)
 		[[ ! -e "$geeqie_imagem" ]] || [[ ! -e "$mc_editor" ]] && {
-			echo -e "\033[35;1m O software 'MC' ou 'Geeqie' não foi encontrado no sistema.\033[0m"
+			printf '\033[1;35m%s\033[m\n' " O software 'MC' ou 'Geeqie' não foi encontrado no sistema."
 			shift
 		}
 		case "$opcao2" in
-			-i | --image) [[ ! -e "$opcao3" ]] && echo -e "\033[35;1m '$opcao3' não existe.\033[m" || \
-			geeqie "$opcao3" ;;
+			-i | --image) [[ ! -e "$opcao3" ]] && printf '\033[1;35m%s\033[m\n' " '$opcao3' não existe." || \
+			geeqie $opcao3 ;;
 
-			-t | --text) mcedit "$opcao3" ;;
+			-t | --text) mcedit $opcao3 ;;
 
-			*) echo -e "\033[35;1m Digite \"help\" para informações da função view.\033[0m" ;;
-		esac #case $opcao2
+			*) printf '\033[1;35m%s\033[m\n' "\033[35;1m Digite \"help\" para informações.\033[0m" ;;
+		esac
         ;; #view
 
 	help) ajuda ;;
 
 	exit | quit) mv "$diretorio_raiz" "/mnt/.room" && exit 0 ;; # Camuflagem /mnt/.room
 
-	*) echo -e "\033[35;1m Comando não encontrado\033[m" ;;
+	*) continue ;;
+#	*) echo -e "\033[35;1m Comando não encontrado\033[m" ;;
 
-    esac #fim_case_$opcao1
-done #fim_While_principal
+    esac
+done
