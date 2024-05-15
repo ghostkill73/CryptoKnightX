@@ -12,7 +12,7 @@
 
 <p align="center"><br>CryptoKnight é um gerenciador de arquivos feito puramente em bash script, o
 objetivo deste programa é manter sua privacidade e integridade de seus documentos.</p>
-<p align="center">Este repositório do é uma fork do projeto original de Slackjeff.
+<p align="center">Este repositório é uma fork do projeto original de Slackjeff.
 <a href="https://notabug.org/slackjeff/knight" target="_blank">acesse aqui!</a></p>
 
 <h1 align="center">Configurando</h1>
