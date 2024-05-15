@@ -28,7 +28,7 @@ codinome="debian" # <-- HOSTNAME --> uname -n</code>
 
 <p>Edite as variáveis com um login, senha e hostname da sua máquina (utilize o comando <code>uname -n</code> para exibir).</p>
 <p>Após isso, salve a edição e execute o <code>install.ckx</code>, o script fará algumas verificações nos repositórios
-da máquina para copiar o <code>knight</code> para <code>/usr/bin/</code> e conceder permissão 700 para somente o root alterar
+da máquina para copiar o <code>ckx</code> para <code>/usr/bin/</code> e conceder permissão 700 para somente o root alterar
 o arquivo.</p>
 
 <h1 align="center">Comandos</h1>
@@ -44,8 +44,8 @@ o arquivo.</p>
 </pre>
 
 <pre>
-<code>knight [v|L]
-   -v > exibe a versão atual.
+<code>ckx [v]
+   -v > exibe a versão atual.</code>
 </pre>
 
 <pre>
