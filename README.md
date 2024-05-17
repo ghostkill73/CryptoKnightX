@@ -1,9 +1,11 @@
 <html>
-<h1 align="center">CryptoKnightX</h1>
 
 <div align="center">
-<img width=”200" height=”200" src="ckx-img.png" alt=”Banner”>
+<img width=”200" height=”200" src="ckx-img.png" alt=”Banner” style="width:100%">
+<p>banner by _surowo (discord)</p>
 </div>
+
+<h1 align="center">CryptoKnightX</h1>
 
 <div align="center">
 <a href="https://www.gnu.org/software/bash/" target="_blank"><img src="https://badgen.net/badge/SHELL/BASH/green?icon=terminal"></a>
