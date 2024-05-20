@@ -1,17 +1,31 @@
 #!/usr/bin/env bash
 #----------------------------------------------------------------------------------+
+#
 # AUTOR  : ghostkill <github.com/ghostkill73>
-# VERSÃO : 0.0.1b
+# VERSÃO : 0.0.1.1b
 # LICENÇA: GPL-3.0
 #
 #----------------------------------------------------------------------------------+
+# THIS IS A FORK.
+#
 # CryptoKnightX é uma fork!
 # Projeto original de Jefferson Rocha:
 # <https://notabug.org/slackjeff/knight>
 #
-#DESCRIÇÃO-------------------------------------------------------------------------+
+#----------------------------------------------------------------------------------+
+# DESCRIÇÃO:
 #
-# EM PROCESSO
+# O objetivo deste software é manter a segurança e integridade de seus documentos.
+# O CKX foi feito em sua maior parte em bash script puro, isso significa que ele
+# funcionará corretamenta na maioria dos sistemas operacionais, sem que tenham de
+# depender de muitos pacotes terceiros
+#
+# DEPENDÊNCIAS OPCIONAIS: MC (mc editor) e Geeqie.
+#
+# Rode o arquivo 'install.ckx', ele fará o processo de checar os respectivos
+# repositórios para fazer a instalação do executável 'ckx'.
+#
+# certifique-se que o executável esteja configurado e funcionamento corretamente.
 #
 #----------------------------------------------------------------------------------+
 # Variáveis
@@ -25,7 +39,8 @@ codinome="debian" # <- INSIRA AQUI SEU HOSTNAME ==> uname -n
 programa="CryptoKnightX"
 diretorio_raiz="/.rules.d"
 subpasta="41-knight.rules/.ghost"
-versao="0.0.1b"
+versao="0.0.1.1b"
+HOME="$diretorio_raiz/$subpasta" # define o dir oculto como home localmente
 
 # COMANDOS
 UNAME="$(uname -n)"
@@ -242,7 +257,7 @@ func_login(){
 [[ "$UNAME" = "$codinome" ]] && {
 	cd "$diretorio_raiz"/"$subpasta"
 	clear
-	printf '\033[31;1%s\033[m\n' ' --||==[._\CRYPTOKNIGHTX/_.]==>'
+	printf '\033[31;1m%s\033[m\n' " --||==[._\CRYPTOKNIGHTX/_.]==>"
 	} || {
 	clear
 	func_login
@@ -321,7 +336,6 @@ while :; do
 	exit | quit) mv "$diretorio_raiz" "/mnt/.room" && exit 0 ;; # Camuflagem /mnt/.room
 
 	*) continue ;;
-#	*) echo -e "\033[35;1m Comando não encontrado\033[m" ;;
 
     esac
 done

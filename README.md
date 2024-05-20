@@ -9,7 +9,7 @@
 
 <div align="center">
 <a href="https://www.gnu.org/software/bash/" target="_blank"><img src="https://badgen.net/badge/SHELL/BASH/green?icon=terminal"></a>
-<a href="https://www.gnu.org/software/bash/" target="_blank"><img src="https://badgen.net/badge/Versão/0.0.1b/red"></a>
+<a href="https://www.gnu.org/software/bash/" target="_blank"><img src="https://badgen.net/badge/Versão/0.0.1.1b/red"></a>
 </div>
 
 <p align="center"><br>CryptoKnightX é um gerenciador de arquivos feito puramente em bash script, o
