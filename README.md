@@ -8,8 +8,9 @@
 <h1 align="center">CryptoKnightX</h1>
 
 <div align="center">
-<a href="https://www.gnu.org/software/bash/" target="_blank"><img src="https://badgen.net/badge/SHELL/BASH/green?icon=terminal"></a>
-<a href="https://www.gnu.org/software/bash/" target="_blank"><img src="https://badgen.net/badge/Versão/0.0.1.1b/red"></a>
+<a href="https://www.gnu.org/software/bash/" target="_blank"><img src="https://badgen.net/badge/Made with/Bash/green?icon=terminal"></a>
+<a href="https://github.com/ghostkill73/CryptoKnightX" target="_blank"><img src="https://starchart.cc/ghostkill73/CryptoKnightX.svg"></a>
+<a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank"><img src="https://img.shields.io/github/license/ghostkill73/CryptoKnightX.svg"></a>
 </div>
 
 <p align="center"><br>CryptoKnightX é um gerenciador de arquivos feito puramente em bash script, o
@@ -59,4 +60,6 @@ o arquivo.</p>
 
 <hr>
 <p align="center">donate<br>bitcoin: bc1qq77c3w5l97da0pjn6d4dx9zueys29p799q7heq</p>
+
+<div align="center"><img src="https://starchart.cc/ghostkill73/CryptoKnightX.svg"></div>
 </html>
