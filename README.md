@@ -8,9 +8,9 @@
 <h1 align="center">CryptoKnightX</h1>
 
 <div align="center">
-<a href="https://www.gnu.org/software/bash/" target="_blank"><img src="https://badgen.net/badge/Made with/Bash/green?icon=terminal"></a>
-<a href="https://www.gnu.org/software/bash/" target="_blank"><img src="https://badgen.net/badge/Version/v0.0.1.1b/red?label"></a>
-<a href="https://www.gnu.org/software/bash/" target="_blank"><img src="https://badgen.net/badge/Free Software/GPLv3.0/black?label"></a>
+<a href="https://www.gnu.org/software/bash/" target="_blank"><img src="https://badgen.net/badge/Made with/Bash/green?icon"></a>
+<a href="https://www.gnu.org/software/bash/" target="_blank"><img src="https://badgen.net/badge/Version/v0.0.1.1b/red?icon"></a>
+<a href="https://www.gnu.org/software/bash/" target="_blank"><img src="https://badgen.net/badge/Free Software/GPLv3.0/black?icon"></a>
 </div>
 
 <p align="center"><br>CryptoKnightX é um gerenciador de arquivos feito puramente em bash script, o
@@ -26,7 +26,7 @@ o acesso dos arquivos ocultos. exemplo:</p>
 <pre>
 <code>usuario="root" # <- LOGIN 
 senha="root" # <- SENHA 
-codinome="debian" # <-- HOSTNAME --> uname -n</code>
+codinome="debian" # <- HOSTNAME</code>
 </pre>
 
 <p>Edite as variáveis com um login, senha e hostname da sua máquina (utilize o comando <code>uname -n</code> para exibir).</p>
@@ -60,6 +60,4 @@ o arquivo.</p>
 
 <hr>
 <p align="center">donate<br>bitcoin: bc1qq77c3w5l97da0pjn6d4dx9zueys29p799q7heq</p>
-
-<div align="center"><img src="https://starchart.cc/ghostkill73/CryptoKnightX.svg"></div>
 </html>
