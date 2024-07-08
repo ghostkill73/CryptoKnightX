@@ -1,341 +1,327 @@
 #!/usr/bin/env bash
 #----------------------------------------------------------------------------------+
+# autor  : Abner Benedito
+# github : ghostkill73
 #
-# AUTOR  : ghostkill <github.com/ghostkill73>
-# VERSÃO : 0.0.1.1b
-# LICENÇA: GPL-3.0
+declare _ckx_version="v0.0.3b"
 #
+# licença: GPLv3+
 #----------------------------------------------------------------------------------+
-# THIS IS A FORK.
 #
 # CryptoKnightX é uma fork!
-# Projeto original de Jefferson Rocha:
+# Projeto originado por Jefferson Rocha:
 # <https://notabug.org/slackjeff/knight>
 #
+#----------------------------------------------------------------------------------+
+# Copyright (C) 2024  Abner Benedito
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #----------------------------------------------------------------------------------+
 # DESCRIÇÃO:
 #
 # O objetivo deste software é manter a segurança e integridade de seus documentos.
 # O CKX foi feito em sua maior parte em bash script puro, isso significa que ele
-# funcionará corretamenta na maioria dos sistemas operacionais, sem que tenham de
-# depender de muitos pacotes terceiros
+# funcionará corretamenta na maioria das distribuições linux, sem que tenham de
+# depender de muitos pacotes terceiros.
 #
-# DEPENDÊNCIAS OPCIONAIS: MC (mc editor) e Geeqie.
+# Dependências fundamentais:
+#	- GNU Tar 1.3+
+#	- GNU Privacy Guard (gpg) 2.2+
+#	- GNU Bash (Bourne-Again Shell) 4+
 #
-# Rode o arquivo 'install.ckx', ele fará o processo de checar os respectivos
-# repositórios para fazer a instalação do executável 'ckx'.
+# Avisos:
 #
-# certifique-se que o executável esteja configurado e funcionamento corretamente.
+#	* Os desenvolvedores deste software não se responsabilizam
+#	pelo uso indevido desta ferramenta;
+#
+#	* O CKX não segue o padrão SHELL POSIX;
+#
+#	* Certifique-se de não perder sua senha dos arquivos
+#	criptografados, se perder já era! a chance de conseguir
+#	quebrar a criptografia é mínima;
+#
+#	* Nenhum sistema é seguro, proteja sua integridade.
+#	tenha em mente que um dia você será hackeado, procure
+#	reduzir riscos. Não utilize somente o CKX para proteger
+#	seus documentos mas também proteja sua máquina como um
+#	todo.
+#
+# Boas práticas:
+#
+#	* ter uma senha de usuário root forte;
+#
+#	* criptografar o armazenamento(HDD,SSD,...) da máquina;
+#
+#	* utilizar uma senha com no mínimo 8 caracteres
+#	sem possuir um padrão óbvio, colocando caracteres
+#	como `#$@%`;
+#
+#	* troca periódica das senhas;
+#
+#	* se possível utilize gerenciadores de senhas off-line
+#	como o `keepassXC` por exemplo, donde possibilita copiar
+#	e colar a sua senha;
+#
+#	* Fazer backups constantes e armazená-los em um local
+#	seguro;
+#
+# Contribuindo:
+#
+#	* Sempre procure fazer um script puro, utilizando os recursos
+#	que o BASH possue;
+#
+#	* Não adicione utilitários terceiros não-livres e/ou que fujam
+# 	do escopo das dependências fundamentais do software;
+#
+#	* Certifique-se de que as modificações estão corretas, livres
+#	de problemas.
 #
 #----------------------------------------------------------------------------------+
-# Variáveis
 
-# KEYS
-usuario="root" # <- LOGIN PARA ACESSO DO CKX
-senha="root" # <- SENHA PARA ACESSO DO CKX
-codinome="debian" # <- INSIRA AQUI SEU HOSTNAME ==> uname -n
+########################################################################################
+#
+# DEBUG
+# - utilize o debug para verificar erros
+#
+########################################################################################
 
-# CONFIGURAÇÕES
-programa="CryptoKnightX"
-diretorio_raiz="/.rules.d"
-subpasta="41-knight.rules/.ghost"
-versao="0.0.1.1b"
-HOME="$diretorio_raiz/$subpasta" # define o dir oculto como home localmente
+# 0 true
+# >= 1 false
+declare _ckx_debug=1
+[[ ! "$_ckx_debug" -ge '1' ]] && set -x
 
-# COMANDOS
-UNAME="$(uname -n)"
-geeqie_imagem="$(which geeqie 2>&-)"
-mc_editor="$(which mc 2>&-)"
-DEBUG="1" #0 Desligado, 1 Ligado [padrao 1 ligado]
 
-[[ "$EUID" != '0' ]] && exit 1 # verificando root
-chmod 700 /usr/bin/ckx # permissão rwx para root
+########################################################################################
+#
+# Variáveis globais
+# - nome do software
+# - diretório principal
+# - variáveis de retorno
+# - variáveis de configuração
+#
+########################################################################################
+
+declare _ckx_software_name="CryptoKnightX"
+declare _ckx_dir="$HOME/.ckx/"
+
+declare _ckx_true=0
+declare _ckx_false=1
+declare _ckx_error=2
+
+declare _global_cdpath="$PWD"
+
+
+########################################################################################
+#
+# pré-verificação
+# - verificando root
+# - verificando HOME
+# - verificando $HOME/.ckx/
+#
+########################################################################################
+
+# verificando se o usuário está executando como root.
+[[ "$EUID" != '0' ]] && {
+	printf '%s\n' "Permissão negada: verifique se está executando como root."
+	exit 1
+}
+
+# verificando se $HOME está definido.
+: ${HOME?"a variável HOME não está definida."}
+
+# verificando se $HOME/.ckx/ existe, caso contrário cria o diretório.
+[[ ! -d "$_ckx_dir" ]] && {
+	mkdir -p "$_ckx_dir" 2>&-
+}
+
+
+########################################################################################
+#
+# utilitários para o bom funcionamento do software
+#
+########################################################################################
+
+msg()
+{
+	printf '%b\n' "$*" 2>/dev/null
+}
+
+die()
+{
+	msg "\e[41m${*}\e[m"
+
+	exit ${_ckx_false}
+}
+
+sucess()
+{
+	msg "\e[1;32m${*}\e[m"
+
+	return ${_ckx_true}
+}
+
+
+########################################################################################
+#
+# informações
+#
+########################################################################################
+
+short_license()
+{
+	msg " ${_ckx_software_name} ${_ckx_version} Copyright (C) 2024  Abner Benedito"
+	msg " This program comes with ABSOLUTELY NO WARRANTY"
+	msg " This is free software, and you are welcome to redistribute it"
+	msg " under certain conditions."
+	msg ""
+	msg " Digite a opção '--help' para mais detalhes."
+
+	exit ${_ckx_false}
+}
+
+display_license()
+{
+	msg " ${_ckx_software_name} ${_ckx_version} Copyright (C) 2024  Abner Benedito"
+	msg ""
+	msg " This program is free software: you can redistribute it and/or modify"
+	msg " it under the terms of the GNU General Public License as published by"
+	msg " the Free Software Foundation, either version 3 of the License, or"
+	msg " (at your option) any later version."
+	msg ""
+	msg " This program is distributed in the hope that it will be useful,"
+	msg " but WITHOUT ANY WARRANTY; without even the implied warranty of"
+	msg " MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the"
+	msg " GNU General Public License for more details."
+	msg ""
+	msg " You should have received a copy of the GNU General Public License"
+	msg " along with this program.  If not, see <https://www.gnu.org/licenses/>."
+
+	exit ${_ckx_true}
+}
+
+
+display_version()
+{
+	msg " ${_ckx_software_name} ${_ckx_version} Copyright (C) 2024  Abner Benedito"
+
+	exit ${_ckx_true}
+}
+
+display_help()
+{
+	msg "${_ckx_software_name} ${_ckx_version} Copyright (C) 2024  Abner Benedito"
+	msg " This program comes with ABSOLUTELY NO WARRANTY"
+	msg " This is free software, and you are welcome to redistribute it"
+	msg " under certain conditions."
+	msg ""
+	msg "Utilize: ckx [OPÇÃO]"
+	msg "CryptoKnightX é um encriptador de arquivos ocultos."
+	msg ""
+	msg "  -h, --help                 mostra esta mensagem e termina."
+	msg "  -v, --version              mostra a versão do software e termina."
+	msg "  -l, --license              mostra a licença do software e termina."
+	msg "  -s, --start                inicia o software."
+	msg ""
+	msg "contribua e/ou reporte bugs em: <github.com/ghostkill73/CryptoKnightX>"
+
+	exit ${_ckx_true}
+}
+
+
+########################################################################################
+#
+# função principal
+#
+########################################################################################
+
+main()
+{
+	local __commands__=
+
+	#clear
+
+	cd ${_ckx_dir}
+
+	[[ -e "${_ckx_dir}/data.tar.gpg" ]] && {
+		gpg --quiet -o data.tar --no-symkey-cache \
+		-d data.tar.gpg || \
+		{
+			die "Operação cancelada ou senha incorreta."
+		}
+
+		tar -xvf data.tar
+
+		rm -vr data{.tar,.tar.gpg}
+	}
+
+	[[ -d "${_ckx_dir}/data/" ]] || {
+		mkdir -p ./data/ 2>&-
+	}
+
+	# desativando CTRL+C
+	trap "echo utilize o comando 'exit' para sair." SIGINT
+
+	msg "\e[1;31m --||////[CRYPTOKNIGHTX]////>\e[m"
+
+	while :; do
+		read -ep $'\e[1;31m<ckx> \e[m' __commands__
+
+		case "$__commands__" in
+
+			exit|quit)
+				cd ${_ckx_dir}
+
+				tar -cvf data.tar ./data/
+
+				gpg --no-symkey-cache -c --cipher-algo \
+				AES256 data.tar || continue
+
+				rm -vr ./data/ data.tar
+
+				cd ${_global_cdpath}
+
+				trap - SIGINT
+				exit ${_ckx_true}
+			;;
+
+			*)
+				eval "${__commands__}"
+			;;
+
+		esac # esac __commands__
+	done # while main
+}
+
 
 #----------------------------------------------------------------------------------+
-# Funções
-
-debug() {  #Adicionar em trechos do código, caso precise ligar o debug.
-	[[ "$DEBUG" = '1' ]] && set -x
-}
-
-pwd() { printf '%s\n' "$PWD"; }
-cat() { for file in "$@"; do printf "%s\\n" "$(<"$file")"; done; }
-sleep() { read -rt "$1" <> <(:) || :; }
-clear() { printf '\033[2J\033[H'; }
-die() { printf '\033[41m%s\033[m\n' "$@"; exit 1; }
-sucess() { printf '\033[1;32m%s\033[m\n' "$@"; }
-
-ajuda() {
-command cat <<'EOF' | less
- Manual de ajuda do software CryptoKnightX.
-
- [!] Digite no terminal 'man <nome-do-comando>' para mais informações
- sobre os comandos.
-
- [!] O formato "[A | B]" indica: ou A ou B
-
- COMANDOS DE LINHA:
-	ckx [--destruction | -d] - destroi toda informação contida na pasta oculta,
-	este comando deve ser utilizado antes de iniciar o programa.
-	Cuidado!! ...
-
-
- ckx - comando principal do programa.
-	ckx [-v | --version] - exibe a versão atual do CryptoKnightX.
-
- help - exibe esta mensagem
-
- clear | cl - limpa o terminal.
-
- exit | quit - sai do programa e move os arquivos ocultos para /mnt/.room .
-
- man - manual padrão do GNU/Linux.
-	o utilitário man exibe informações de comandos contidos no projeto GNU.
-
- view - utilitário local para vizualizar imagens e arquivos de texto.
-	view [-t | --text] 'nome do arquivo' - vizualiza o texto contido em um arquivo
-	especificado.
-
-	view [-i | --image] 'nome do arquivo' - vizualiza uma imagem especificada.
-
- rm | remove - remove documentos.
-	rm 'nome do arquivo' - deleta um arquivo.
-
-	rm -r 'nome do diretório' - deleta um diretório recursivamente.
-
- ls - lista documentos de um diretório.
- 	ls - lista documentos do diretório atual
-
- 	ls 'caminho/do/repositório' - lista documentos do diretório especificado no caminho.
-
- mv | move - move documentos.
-	mv 'nome do documento' 'destino' - move um documento para o destino especificado.
-
-	mv 'nome do documento' 'destino/do/documento' - move um documento
-	para um caminho especificado.
-
- cd - muda o diretório atual.
-	cd 'nome do diretório' - caminha para um diretório especificado.
-
-	cd 'caminho/do/diretório' - caminha para um diretório em um caminho especificado.
-
- cp | copy - copia documentos.
-	cp 'nome do documento' 'destino' - copia um documento para o destino especificado.
-
-	cp 'nome do documento' 'destino/do/documento' - copia um documento
-	para um caminho especificado.
-
- mkdir - cria um diretório.
-	mkdir 'nome do diretório' - cria um diretório no local atual.
-
-	mkdir 'nome1/nome2' - cria um diretório em um diretório já existente.
-
-	mkdir -p 'caminho/para/ser/criado' - cria um diretório com sub-diretórios
-	especificados na ordem.
-
-	mkdir '{nome1,nome2,nome3}' - cria múltiplos diretórios no local atual.
-
- cat - concatena arquivos de texto.
-	cat 'nome do arquivo' - exibe o conteúdo de um arquivo.
-
-	cat 'nome do arquivo' 'nome de arquivo 2' - exibe o conteúdo dos dois arquivos
-	juntos na ordem dos argumentos.
-
- pwd - exibe o caminho dos diretórios.
-	pwd - exibe o caminho do diretório atual.
-
- chmod - configura as permissões de um arquivo.
-	chmod 0 'nome do arquivo' - restringe todo o uso do arquivo para somente o usuário
-	root.
-
- tar - utiliário para comprimir arquivos.
-	tar -cvf 'nome-do-arquivo-comprimido.tar' 'documento' - compacta um documento
-	em .tar no modo verboso.
-
-	tar -czvf 'nome.tar.gz' 'documento' - compacta um documento para gunzip.
-
-	tar -xvf 'nome.[tar|tar.gz]' - extrai um arquivo compactado.
-
- zip - utilitário para comprimir arquivos.
-	zip 'arquivo.zip' 'arquivo' - compacta um arquivo para zip.
-
-	zip -r 'arquivo.zip' 'documento' - compacta um diretório recursivamente.
-
-	zip -e 'arquivo.zip' 'documento' - compacta e adiciona uma senha especificada.
-	utilize a opção 'r'(er) somada para compactar recursivamente e adicionar uma
-	senha.
-
- nano - nano é um editor de arquivos em texto simples e prático.
-	nano 'nome do arquivo' - edita um arquivo. utilize CTRL+S para salvar e
-	CTRL+X para sair, ou, utilize CTRL+O ('letra O de Ônibus') para salvar
-	renomear e sair.
-
- mc - mc é um gerenciador de arquivos visual em seu terminal.
-	pressione SHIFT+0 (zero) para sair do programa.
-
- ssh - conexões secure shell.
-
- sftp - conexões SSH FTP.
-
- wget - CKX suporta wget.
-
-
-
- CryptoKnightX - Fork feita por ghostkill.
-
- CryptoKnightX é um fork do projeto Knight originado
- de Jefferson Rocha. <https://notabug.org/slackjeff/knight>
-
- DIGITE "Q" PARA SAIR DESTA TELA.
-EOF
-}
-
-destruir() {
-	find "$diretorio_raiz/$subpasta/" -type f -exec shred -n 50 -uvz {} \;
-}
-
-#----------------------------------------------------------------------------------+
-# Iniciando
-
+####################################### SCRIPT #####################################
 
 # Parametros para rodar em linha
-case "$1" in
-	-d|--destruction)
-	[[ -d "$diretorio_raiz/$subpasta" ]] && {
-		find "$diretorio_raiz/$subpasta/" -type f
+case "$1" in #dev
 
-		read -p $'Destruir arquivos ocultos do CryptoKnightX? (y/n): ' destruir1
-		case "$destruir1" in
-		[yY]*) ;;
-		[nN]*) exit 0 ;;
-		*) die 'Opção inválida...' ;;
-		esac
+	-s|--start) main ;;
 
-		read -p $'Certeza? (confirmação) (y/n): ' destruir2
-		case "$destruir2" in
-		[yY]*) destruir ;;
-		[nN]*) exit 0 ;;
-		*) die 'Opção inválida...' ;;
-		esac
+	-h|--help) display_help ;;
 
-		[[ -z "$(find ""$diretorio_raiz"/"$subpasta"" -type f)" ]] && {
-		sucess 'Os arquivos foram subscritos e apagados com sucesso!'
-		exit 0
-		} || {
-		die 'Algum erro ocorreu ou os arquivos se mantiveram...'
-		}
-	} || {
-	die "$diretorio_raiz/$subpasta não foi encontrado..."
-	}
-	;;
+	-l|--license) display_license ;;
+
+	-v|--version) display_version ;;
+
+	*) short_license ;;
+
 esac
 
-# Conferindo Frase secreta
- read -p $'\033[31;1m A valentia de qualquer soldado só se conhece na guerra \033[m' frase_secreta
- [[ "$frase_secreta" != 'ckx' ]] && exit 1
 
-# quit ou exit no console, descamuflando .room para padrão.
-[[ -d "/mnt/.room" ]] && mv "/mnt/.room" "$diretorio_raiz"
-
-# Pasta não existe? então vamos criar e dar permissão 0.
-[[ ! -d "$diretorio_raiz"/"$subpasta" ]] && {
-	mkdir -p "$diretorio_raiz"/"$subpasta" 2>&-
-	chmod 0 "$diretorio_raiz" && chmod 0 "$diretorio_raiz"/"$subpasta"
-}
-
+##################################### END SCRIPT ###################################
 #----------------------------------------------------------------------------------+
-# Login
-
-func_login(){
- clear
-   read -sp "Usuário: " fazer_login
-   read -sp "Senha: " fazer_password
-   read -sp "Confirme sua senha: " fazer_password
-
-# Vasculhando se todas as informações batem...Se uma não bater não roda.
-[[ "$fazer_login" = "$usuario" ]] && [[ "$fazer_password" = "$senha" ]] && \
-[[ "$UNAME" = "$codinome" ]] && {
-	cd "$diretorio_raiz"/"$subpasta"
-	clear
-	printf '\033[31;1m%s\033[m\n' " --||==[._\CRYPTOKNIGHTX/_.]==>"
-	} || {
-	clear
-	func_login
-	}
-}
-func_login
-
-#----------------------------------------------------------------------------------+
-# Script
-
-while :; do
-  read -ep $'\033[31;1m[CKX] \033[m' opcao1 opcao2 opcao3 opcao4
-    case "$opcao1" in
-	man | manual) man $opcao2 ;;
-
-	zip) zip $opcao2 $opcao3 $opcao4 ;;
-
-	unzip) unzip $opcao2 $opcao3 $opcao4 ;;
-
-	mc) mc ;;
-
-	mv | move) mv $opcao2 $opcao3 ;;
-
-	cat) cat $opcao2 $opcao3 $opcao4 ;;
-
-	cp | copy) cp $opcao2 $opcao3 $opcao4 ;;
-
-	tar) tar $opcao2 $opcao3 $opcao4 ;;
-
-	cd) cd $opcao2 ;;
-
-	nano) nano $opcao2 $opcao3 ;;
-
-	ckx)
-            case $"opcao2" in
-		-v | --version) printf '%s\n' " A versão atual do CryptoKnightX é: $versao";;
-		*) printf '\033[1;35m%s\033[m\n' " Digite \"help\" para informações." ;;
-            esac
-        ;;
-
-	clear | cl) clear ;;
-
-	chmod) chmod $opcao2 $opcao3 ;;
-
-	mkdir) mkdir $opcao2 $opcao3 ;;
-
-	rm | remove) rm $opcao2 $opcao3 2>&- ;;
-
-	pwd) pwd ;;
-
-	ssh) ssh $opcao2 $opcao3 $opcao4 ;;
-
-	sftp) sftp $opcao2 $opcao3 $opcao4 ;;
-
-	wget) wget $opcao2 $opcao3 $opcao4 ;;
-
-	ls | list) ls --color $opcao2 $opcao3 ;;
-
-	view)
-		[[ ! -e "$geeqie_imagem" ]] || [[ ! -e "$mc_editor" ]] && {
-			printf '\033[1;35m%s\033[m\n' " O software 'MC' ou 'Geeqie' não foi encontrado no sistema."
-			shift
-		}
-		case "$opcao2" in
-			-i | --image) [[ ! -e "$opcao3" ]] && printf '\033[1;35m%s\033[m\n' " '$opcao3' não existe." || \
-			geeqie $opcao3 ;;
-
-			-t | --text) mcedit $opcao3 ;;
-
-			*) printf '\033[1;35m%s\033[m\n' "\033[35;1m Digite \"help\" para informações.\033[0m" ;;
-		esac
-        ;; #view
-
-	help) ajuda ;;
-
-	exit | quit) mv "$diretorio_raiz" "/mnt/.room" && exit 0 ;; # Camuflagem /mnt/.room
-
-	*) continue ;;
-
-    esac
-done
