@@ -1,63 +1,65 @@
 <html>
 
 <div align="center">
-<img width=”200" height=”200" src="ckx-img.png" alt=”Banner” style="width:100%">
+<img width=”100" height=”100" src="ckx-img.png" alt=”Banner” style="width:80%">
 <p>banner by _surowo (discord)</p>
 </div>
+
 
 <h1 align="center">CryptoKnightX</h1>
 
 <div align="center">
 <a href="https://www.gnu.org/software/bash/" target="_blank"><img src="https://badgen.net/badge/Made with/Bash/green?icon"></a>
-<a href="https://www.gnu.org/software/bash/" target="_blank"><img src="https://badgen.net/badge/Version/v0.0.1.1b/red?icon"></a>
-<a href="https://www.gnu.org/software/bash/" target="_blank"><img src="https://badgen.net/badge/Free Software/GPLv3.0/black?icon"></a>
+<a href="https://www.gnu.org/software/bash/" target="_blank"><img src="https://badgen.net/badge/Version/v0.0.3b/red?icon"></a>
+<a href="https://www.gnu.org/software/bash/" target="_blank"><img src="https://badgen.net/badge/Free Software/GPLv3.0+/black?icon"></a>
 </div>
 
-<p align="center"><br>CryptoKnightX é um gerenciador de arquivos feito puramente em bash script, o
-objetivo deste programa é manter sua privacidade e integridade de seus documentos.</p>
-<p align="center">Este repositório é uma fork do projeto original de Slackjeff.
+<p align="center"><br>CryptoKnightX é um subshell encriptador de arquivos feito em bash script, o
+objetivo deste software é manter sua privacidade e integridade de seus documentos.</p>
+<p align="center">Este repositório é uma fork do projeto originado por Slackjeff.
 <a href="https://notabug.org/slackjeff/knight" target="_blank">acesse aqui!</a></p>
 
-<h1 align="center">Configurando</h1>
 
-<p>Abra o executável <code>ckx</code> com um editor de texto e procure pelas variáveis com configurações fundamentais para
-o acesso dos arquivos ocultos. exemplo:</p>
-
-<pre>
-<code>usuario="root" # <- LOGIN 
-senha="root" # <- SENHA 
-codinome="debian" # <- HOSTNAME</code>
-</pre>
-
-<p>Edite as variáveis com um login, senha e hostname da sua máquina (utilize o comando <code>uname -n</code> para exibir).</p>
-<p>Após isso, salve a edição e execute o <code>install.ckx</code>, o script fará algumas verificações nos repositórios
-da máquina para copiar o <code>ckx</code> para <code>/usr/bin/</code> e conceder permissão 700 para somente o root alterar
-o arquivo.</p>
-
-<h1 align="center">Comandos</h1>
-
-<h3>Comandos de linha:</h3>
-<p><code>ckx [--destruction | -d]</code> - subscreve e apaga todos os arquivos contidos na pasta oculta do CKX.</code></p>
+<h2 align="center">Sumário</h2>
+<a href="https://github.com/ghostkill73/CryptoKnightX?tab=readme-ov-file#dependências" target="_blank">1. Dependências</a>
 <br>
+<a href="https://github.com/ghostkill73/CryptoKnightX?tab=readme-ov-file#como-instalar" target="_blank">2. Como instalar?</a>
+<br>
+<a href="https://github.com/ghostkill73/CryptoKnightX?tab=readme-ov-file#como-utilizar" target="_blank">3. Como utilizar?</a>
+<br>
+<a href="https://github.com/ghostkill73/CryptoKnightX?tab=readme-ov-file#donate" target="_blank">4. Donate</a>
 
-<h3>Comandos no sub-shell:</h3>
 
-<pre>
-<code>help - exibe os comandos disponíveis no software.</code>
-</pre>
+<h2 align="center">Dependências</h2>
+<p>Dependências necessárias para utilizar o software:</p>
+<ul>
+   <li><b><a href="https://www.gnu.org/software/tar/" target="_blank">GNU Tar</a> 1.3+</b></li>
+   <li><b><a href="https://www.gnu.org/software/bash/" target="_blank">GNU Bash</a> 4+</b></li>
+   <li><b><a href="https://gnupg.org/" target="_blank">gnupg</a> 2.2+</b></li>
+</ul>
 
-<pre>
-<code>ckx [v]
-   -v > exibe a versão atual.</code>
-</pre>
 
-<pre>
-<code>view [--image|--text]
-   --image | -i > abre uma imagem.
-   --text | -t > abre o texto de um arquivo.</code>
-  necessita dos utilitários 'mc editor' e 'geeqie'.
-</pre>
+<h2 align="center">Como instalar?</h2>
+<p>Utilize o comando <code>git clone</code> para instalar o repositório:</p>
+<pre><code>git clone https://github.com/ghostkill73/CryptoKnightX</code></code></pre>
 
-<hr>
-<p align="center">donate<br>bitcoin: bc1qq77c3w5l97da0pjn6d4dx9zueys29p799q7heq</p>
+
+<h2 align="center">Como utilizar?</h2>
+
+<p>primeiro entre na pasta do software utilizando o comando</p>
+<pre><code>cd CryptoKnightX</code></pre>
+
+<p>Após isso, execute o comando</p>
+<pre><code>sudo ./ckx --start</code></pre>
+<p>como super usuário para iniciar o software, será necessário digitar a senha de root.</p>
+<br>
+<p>crie alguns arquivos para fim de testes e dentro da subshell, depois utilize o comando <code>exit</code> ou <code>quit</code>
+para criptografar os arquivos e sair, será exigido uma senha para a respectiva encriptação,
+não perca a senha de jeito algum!</p>
+
+
+<h2 align="center">Donate</h2>
+<p align="center">bitcoin: bc1qq77c3w5l97da0pjn6d4dx9zueys29p799q7heq</p>
+
+
 </html>
