@@ -10,8 +10,8 @@
 
 <div align="center">
 <a href="https://www.gnu.org/software/bash/" target="_blank"><img src="https://badgen.net/badge/Made with/Bash/green?icon"></a>
-<a href="https://www.gnu.org/software/bash/" target="_blank"><img src="https://badgen.net/badge/Version/v0.0.3b/red?icon"></a>
-<a href="https://www.gnu.org/software/bash/" target="_blank"><img src="https://badgen.net/badge/Free Software/GPLv3.0+/black?icon"></a>
+<img src="https://badgen.net/badge/Version/v0.0.3b/red?icon">
+<a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank"><img src="https://badgen.net/badge/Free Software/GPLv3.0+/black?icon"></a>
 </div>
 
 <p align="center"><br>CryptoKnightX é um subshell encriptador de arquivos feito em bash script, o
