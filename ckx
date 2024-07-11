@@ -3,7 +3,7 @@
 # autor  : Abner Benedito
 # github : ghostkill73
 #
-declare _ckx_version="v0.0.3.1b"
+declare _ckx_version="v0.0.3.2b"
 #
 # licença: GPLv3+
 #----------------------------------------------------------------------------------+
@@ -38,7 +38,7 @@ declare _ckx_version="v0.0.3.1b"
 # Dependências fundamentais:
 #	- GNU Tar 1.30+
 #	- GNU Privacy Guard (gpg) 2.2+
-#	- GNU Bash (Bourne-Again Shell) 4+
+#	- GNU Bash (Bourne-Again Shell) 3+
 # *** o software ainda está em fase de testes, a versão das dependências
 # podem não corresponder com oque está sendo exigido. ***
 #
@@ -125,32 +125,7 @@ declare _global_cdpath="$PWD"
 
 ########################################################################################
 #
-# pré-verificação
-# - verificando root
-# - verificando HOME
-# - verificando $HOME/.ckx/{lib,data}
-#
-########################################################################################
-
-# verificando se o usuário está executando como root.
-[[ "$EUID" != '0' ]] && {
-	printf '%s\n' "Permissão negada: verifique se está executando como root."
-	exit ${_ckx_false}
-}
-
-# verificando se $HOME está definido.
-: ${HOME?"a variável HOME não está definida."}
-
-# verificando se $HOME/.ckx existe, caso contrário cria o diretório.
-[[ -d "$_ckx_dir" ]] || {
-	mkdir -p "$_ckx_dir" 2>&-
-	mkdir -p "${_ckx_dir}/{lib,data}" 2>&-
-}
-
-
-########################################################################################
-#
-# utilitários
+# utilitários para exibir mensagens
 #
 ########################################################################################
 
@@ -180,13 +155,39 @@ warn()
 	return ${_ckx_true}
 }
 
+
 ########################################################################################
 #
-# sources
+# pré-verificação
+# - verificando root
+# - verificando gpg e tar
+# - verificando HOME
+# - verificando $HOME/.ckx/{lib,data}
 #
 ########################################################################################
 
-source ${_ckx_lib}/gpgconf 2>&- || warn "gpgconf não encontrado... utilizando configurações padrão."
+# verificando se o usuário está executando como root.
+# CASO NÃO QUEIRA USAR ROOT COMENTE O COMANDO ABAIXO
+[[ "$EUID" != '0' ]] && { die "Permissão negada: verifique se está executando como root."; }
+
+# verificando gpg
+[[ -n "$(type -P gpg)" ]] || [[ -n "$(type -P gpg2)" ]] || {
+	die "utilitário gpg/gpg2 não instalado."
+}
+
+# verificando tar
+[[ -n "$(type -P tar)" ]] || {
+	die "utilitário TAR não instalado."
+}
+
+# verificando se $HOME está definido.
+: ${HOME?"a variável HOME não está definida."}
+
+# verificando se $HOME/.ckx existe, caso contrário cria o diretório.
+[[ -d "$_ckx_dir" ]] || {
+	mkdir -p "$_ckx_dir" 2>&-
+	mkdir -p "${_ckx_dir}/{lib,data}" 2>&-
+}
 
 
 ########################################################################################
@@ -269,6 +270,20 @@ display_help()
 
 ########################################################################################
 #
+# sources
+#
+########################################################################################
+
+source ${_ckx_lib}/gpgconf 2>&- || warn "gpgconf não encontrado... utilizando configurações padrão."
+# gpgconf padrão
+: ${s2k_mode:=3}
+: ${s2k_count:=65536}
+: ${s2k_digest_algo:=SHA256}
+: ${s2k_cipher_algo:=AES256}
+
+
+########################################################################################
+#
 # Configurações
 # - gpgconf
 #
@@ -284,21 +299,21 @@ libgpgconf()
 	msg "configurar a biblioteca de variáveis -> gpgconf"
 	msg "definições atuais do gpgconf:"
 	msg ""
-	msg " s2k-mode        = ${s2k_mode:=3}"
-	msg " s2k-count       = ${s2k_count:=65536}"
-	msg " s2k-digest-algo = ${s2k_digest_algo:=SHA256}"
-	msg " s2k-cipher-algo = ${s2k_cipher_algo:=AES256}"
+	msg " s2k-mode        = ${s2k_mode}"
+	msg " s2k-count       = ${s2k_count}"
+	msg " s2k-digest-algo = ${s2k_digest_algo}"
+	msg " s2k-cipher-algo = ${s2k_cipher_algo}"
 	msg ""
 
 	read -p 'Deseja prosseguir com a configuração? (y/N) ' _gpgconf_yorn
 
 	case ${_gpgconf_yorn} in
-	[yY]*) :                         ;;
+	[yY]*) :;;
 	[nN]*)
-	warn "operação cancelada"
-	exit ${_ckx_true}
+		warn "operação cancelada"
+		exit ${_ckx_true}
 	;;
-	*)     die "opção inválida."     ;;
+	*) die "opção inválida." ;;
 	esac
 
 	msg ""
@@ -357,12 +372,12 @@ libgpgconf()
 	read -p "Digite o NÚMERO da opção (padrão = SHA256): " _gpgconf_hash
 
 	case ${_gpgconf_hash} in
-	1|sha1*|SHA1*)     _gpgconf_hash=SHA1      ;;
+	1|sha1*|SHA1*)   _gpgconf_hash=SHA1      ;;
 	2|rip*|RIP*)     _gpgconf_hash=RIPEMD160 ;;
 	3|sha22*|SHA22*) _gpgconf_hash=SHA224    ;;
 	4|sha25*|SHA25*) _gpgconf_hash=SHA256    ;;
-	5|sha3*|SHA3*) _gpgconf_hash=SHA384    ;;
-	6|sha5*|SHA5*) _gpgconf_hash=SHA512    ;;
+	5|sha3*|SHA3*)   _gpgconf_hash=SHA384    ;;
+	6|sha5*|SHA5*)   _gpgconf_hash=SHA512    ;;
 	*)               _gpgconf_hash=SHA256    ;;
 	esac
 	msg ""
@@ -394,12 +409,12 @@ libgpgconf()
 	3|cast5|CAST5)              _gpgconf_cipher=CAST5       ;;
 	4|blow*|BLOW*)              _gpgconf_cipher=BLOWFISH    ;;
 	5|aes|AES)                  _gpgconf_cipher=AES         ;;
-	6|aes1*|AES1*)            _gpgconf_cipher=AES192      ;;
-	7|aes2*|AES2*)            _gpgconf_cipher=AES256      ;;
+	6|aes1*|AES1*)              _gpgconf_cipher=AES192      ;;
+	7|aes2*|AES2*)              _gpgconf_cipher=AES256      ;;
 	8|two*|TWO*)                _gpgconf_cipher=TWOFISH     ;;
 	9|camellia12*|CAMELLIA12*)  _gpgconf_cipher=CAMELLIA128 ;;
 	10|camellia19*|CAMELLIA19*) _gpgconf_cipher=CAMELLIA192 ;;
-	11|camellia2*|CAMELLIA2*) _gpgconf_cipher=CAMELLIA256 ;;
+	11|camellia2*|CAMELLIA2*)   _gpgconf_cipher=CAMELLIA256 ;;
 	*)                          _gpgconf_cipher=AES256      ;;
 	esac
 	msg ""
@@ -441,7 +456,7 @@ _main_encrypt()
 {
 	case "$1" in
 
-	-d)
+	-d) # descritografando
 		gpg --quiet -o data.tar \
 		--no-symkey-cache \
 		-d data.tar.gpg || \
@@ -450,16 +465,27 @@ _main_encrypt()
 		}
 	;;
 
-	-e)
-		gpg --no-symkey-cache \
-		--s2k-mode ${s2k_mode:=3} \
-		--s2k-count ${s2k_count:=65536} \
-		--s2k-digest-algo ${s2k_digest_algo:=SHA256} \
-		--s2k-cipher-algo ${s2k_cipher_algo:=AES256} \
-		-c data.tar || \
-		{
-			die "Algum erro ocorreu."
-		}
+	-e) # criptografando
+		if [[ "$s2k_mode" = '3' ]]; then
+			gpg --no-symkey-cache \
+			--s2k-mode ${s2k_mode} \
+			--s2k-count ${s2k_count} \
+			--s2k-digest-algo ${s2k_digest_algo} \
+			--s2k-cipher-algo ${s2k_cipher_algo} \
+			-c data.tar || \
+			{
+				die "Algum erro ocorreu."
+			}
+		else
+			gpg --no-symkey-cache \
+			--s2k-mode ${s2k_mode} \
+			--s2k-digest-algo ${s2k_digest_algo} \
+			--s2k-cipher-algo ${s2k_cipher_algo} \
+			-c data.tar || \
+			{
+				die "Algum erro ocorreu."
+			}
+		fi
 	;;
 
 	esac
@@ -474,7 +500,7 @@ main()
 	[[ -e "${_ckx_dir}/data.tar.gpg" ]] && {
 		_main_encrypt -d && sucess "arquivos descriptografados"
 
-		tar -xvf data.tar && sucess "arquivos descompactados"
+		tar -xf data.tar && sucess "arquivos descompactados"
 
 		rm -r data{.tar,.tar.gpg} && sucess "cache removido"
 	}
@@ -484,7 +510,7 @@ main()
 	}
 
 	# desativando CTRL+C
-	trap "echo utilize o comando 'exit' para sair. 'break' para forçar saída" SIGINT SIGQUIT
+	trap "echo ou utilize o comando 'exit' para sair ou 'break' para forçar saída." SIGINT SIGQUIT
 
 	msg "\e[1;31m SEJA BEM-VINDO --||////[CRYPTOKNIGHTX]////>\e[m"
 
