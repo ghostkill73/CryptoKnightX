@@ -48,7 +48,7 @@ objetivo deste software é manter sua privacidade e integridade de seus arquivos
    <li><b><a href="https://gnupg.org/" target="_blank">gnupg</a> 2.2+</b></li>
 </ul>
 
-<b>OBS: as versões exigidas podem não corresponderem com a realidade, o software está em fase de testes.
+<b>OBS: as versões exigidas podem não corresponder com a realidade, o software está em fase de testes.
 provavelmente dependências mais antigas irão funcionar corretamente.</b>
 
 <!---COMO INSTALAR--->
