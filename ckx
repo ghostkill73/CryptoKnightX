@@ -30,20 +30,22 @@ declare _ckx_version="v0.0.3b"
 #----------------------------------------------------------------------------------+
 # DESCRIÇÃO:
 #
-# O objetivo deste software é manter a segurança e integridade de seus documentos.
+# O objetivo deste software é manter a segurança e integridade de seus arquivos.
 # O CKX foi feito em sua maior parte em bash script puro, isso significa que ele
 # funcionará corretamenta na maioria das distribuições linux, sem que tenham de
 # depender de muitos pacotes terceiros.
 #
 # Dependências fundamentais:
-#	- GNU Tar 1.3+
+#	- GNU Tar 1.30+
 #	- GNU Privacy Guard (gpg) 2.2+
 #	- GNU Bash (Bourne-Again Shell) 4+
+# *** o software ainda está em fase de testes, a versão das dependências
+# podem não corresponder com oque está sendo exigido. ***
 #
 # Avisos:
 #
-#	* Os desenvolvedores deste software não se responsabilizam
-#	pelo uso indevido desta ferramenta;
+#	* * * Os desenvolvedores deste software não se responsabilizam
+#	pelo uso indevido desta ferramenta; * * *
 #
 #	* O CKX não segue o padrão SHELL POSIX;
 #
@@ -54,7 +56,7 @@ declare _ckx_version="v0.0.3b"
 #	* Nenhum sistema é seguro, proteja sua integridade.
 #	tenha em mente que um dia você será hackeado, procure
 #	reduzir riscos. Não utilize somente o CKX para proteger
-#	seus documentos mas também proteja sua máquina como um
+#	seus arquivos mas também proteja sua máquina como um
 #	todo.
 #
 # Boas práticas:
@@ -96,10 +98,8 @@ declare _ckx_version="v0.0.3b"
 #
 ########################################################################################
 
-# 0 true
-# >= 1 false
-declare _ckx_debug=1
-[[ ! "$_ckx_debug" -ge '1' ]] && set -x
+# export _ckx_debug=0
+[[ "${_ckx_debug:=1}" = '0' ]] && set -x
 
 
 ########################################################################################
@@ -113,7 +113,8 @@ declare _ckx_debug=1
 ########################################################################################
 
 declare _ckx_software_name="CryptoKnightX"
-declare _ckx_dir="$HOME/.ckx/"
+declare _ckx_dir="$HOME/.ckx"
+declare _ckx_lib="${_ckx_dir}/lib"
 
 declare _ckx_true=0
 declare _ckx_false=1
@@ -127,28 +128,29 @@ declare _global_cdpath="$PWD"
 # pré-verificação
 # - verificando root
 # - verificando HOME
-# - verificando $HOME/.ckx/
+# - verificando $HOME/.ckx/{lib,data}
 #
 ########################################################################################
 
 # verificando se o usuário está executando como root.
 [[ "$EUID" != '0' ]] && {
 	printf '%s\n' "Permissão negada: verifique se está executando como root."
-	exit 1
+	exit ${_ckx_false}
 }
 
 # verificando se $HOME está definido.
 : ${HOME?"a variável HOME não está definida."}
 
-# verificando se $HOME/.ckx/ existe, caso contrário cria o diretório.
-[[ ! -d "$_ckx_dir" ]] && {
+# verificando se $HOME/.ckx existe, caso contrário cria o diretório.
+[[ -d "$_ckx_dir" ]] || {
 	mkdir -p "$_ckx_dir" 2>&-
+	mkdir -p "${_ckx_dir}/{lib,data}" 2>&-
 }
 
 
 ########################################################################################
 #
-# utilitários para o bom funcionamento do software
+# utilitários
 #
 ########################################################################################
 
@@ -159,17 +161,32 @@ msg()
 
 die()
 {
-	msg "\e[41m${*}\e[m"
+	msg "\e[41m[!] ${*}\e[m"
 
-	exit ${_ckx_false}
+	exit ${_ckx_error}
 }
 
 sucess()
 {
-	msg "\e[1;32m${*}\e[m"
+	msg "\e[1;32m[*] ${*}\e[m"
 
 	return ${_ckx_true}
 }
+
+warn()
+{
+	msg "\e[1;33m[#] ${*}\e[m"
+
+	return ${_ckx_true}
+}
+
+########################################################################################
+#
+# sources
+#
+########################################################################################
+
+source ${_ckx_lib}/gpgconf 2>&- || warn "gpgconf não encontrado... utilizando configurações padrão."
 
 
 ########################################################################################
@@ -180,14 +197,14 @@ sucess()
 
 short_license()
 {
-	msg " ${_ckx_software_name} ${_ckx_version} Copyright (C) 2024  Abner Benedito"
+	msg " ${_ckx_software_name} ${_ckx_version}"
 	msg " This program comes with ABSOLUTELY NO WARRANTY"
 	msg " This is free software, and you are welcome to redistribute it"
 	msg " under certain conditions."
 	msg ""
 	msg " Digite a opção '--help' para mais detalhes."
 
-	exit ${_ckx_false}
+	exit ${_ckx_true}
 }
 
 display_license()
@@ -213,14 +230,23 @@ display_license()
 
 display_version()
 {
-	msg " ${_ckx_software_name} ${_ckx_version} Copyright (C) 2024  Abner Benedito"
+	msg " ${_ckx_software_name} ${_ckx_version} <github.com/ghostkill73/CryptoKnightX>"
 
 	exit ${_ckx_true}
 }
 
+display_error()
+{
+	msg " A opção '"$1"' não existe"
+	msg ""
+	msg " Digite a opção '--help' para mais detalhes."
+
+	exit ${_ckx_false}
+}
+
 display_help()
 {
-	msg "${_ckx_software_name} ${_ckx_version} Copyright (C) 2024  Abner Benedito"
+	msg "${_ckx_software_name} ${_ckx_version}"
 	msg " This program comes with ABSOLUTELY NO WARRANTY"
 	msg " This is free software, and you are welcome to redistribute it"
 	msg " under certain conditions."
@@ -232,8 +258,10 @@ display_help()
 	msg "  -v, --version              mostra a versão do software e termina."
 	msg "  -l, --license              mostra a licença do software e termina."
 	msg "  -s, --start                inicia o software."
+	msg "  -gpgconf, --enc-config     opção para configurar a criptografia no"
+	msg "                              modo questionário."
 	msg ""
-	msg "contribua e/ou reporte bugs em: <github.com/ghostkill73/CryptoKnightX>"
+	msg "contribua: <github.com/ghostkill73/CryptoKnightX>"
 
 	exit ${_ckx_true}
 }
@@ -241,63 +269,250 @@ display_help()
 
 ########################################################################################
 #
+# Configurações
+# - gpgconf
+#
+########################################################################################
+
+libgpgconf()
+{
+	local _gpgconf_yorn _gpgconf_mode _gpgconf_int _gpgconf_hash _gpgconf_cipher
+
+	msg "${_ckx_software_name} ${_ckx_version}"
+	msg "modo configuração de criptografia"
+	msg ""
+	msg "configurar a biblioteca de variáveis -> gpgconf"
+	msg "definições atuais do gpgconf:"
+	msg ""
+	msg " s2k-mode        = ${s2k_mode:=3}"
+	msg " s2k-count       = ${s2k_count:=65536}"
+	msg " s2k-digest-algo = ${s2k_digest_algo:=SHA256}"
+	msg " s2k-cipher-algo = ${s2k_cipher_algo:=AES256}"
+	msg ""
+
+	read -p 'Deseja prosseguir com a configuração? (y/N) ' _gpgconf_yorn
+
+	case ${_gpgconf_yorn} in
+	[yY]*) :                         ;;
+	[nN]*)
+	warn "operação cancelada"
+	exit ${_ckx_true}
+	;;
+	*)     die "opção inválida."     ;;
+	esac
+
+	msg ""
+	msg "[s2k-mode] modo de operação"
+	msg "define de qual modo a senha mestre será utilizada para criptografar/descriptografar."
+	msg " 0: simples          (hash aplicada na senha uma vez)                       [inseguro,      rápido]"
+	msg " 1: salteado         (hash aplicada na senha uma vez com salt de 8 bytes)   [intermediário, rápido]"
+	msg " 3: salt + interação (hash aplicada na senha 'N' vezes com salt de 8 bytes) [melhor opção,   lento]"
+
+	read -p 'Digite a opção (padrão = 3): ' _gpgconf_mode
+
+	case ${_gpgconf_mode} in
+	0) :;; 1) :;; 3) :;;
+	*) _gpgconf_mode=3 ;;
+	esac
+	msg ""
+	warn "s2k-mode=${_gpgconf_mode}"
+
+	msg ""
+	msg "[s2k-count] número de interações"
+	msg "se o s2k-mode foi definido como 3, s2k-cont define a quantia de interações."
+	msg "suporta de 1024 a 65011712 interações"
+	msg "quanto maior, mais seguro, porém é mais lento para crip./decrip."
+
+	read -p 'Digite a quantia (padrão = 65536): ' _gpgconf_int
+
+	if [[ "$_gpgconf_int" -gt '65011712' ]]; then
+
+		_gpgconf_int=65011712
+
+	elif [[ "$_gpgconf_int" -lt '1024' ]]; then
+
+		_gpgconf_int=1024
+
+	elif [[ "$_gpgconf_int" =~ [^[0-9]] ]]; then
+
+		_gpgconf_int=65536
+
+	else
+		:
+	fi
+	msg ""
+	warn "s2k-digest-algo=${_gpgconf_int}"
+
+	msg ""
+	msg "[s2k-digest-algo] função hash"
+	msg "define qual a função hash que será utilizada nas senhas."
+	msg " 1) SHA1"
+	msg " 2) RIPEMD160 "
+	msg " 3) SHA224"
+	msg " 4) SHA256"
+	msg " 5) SHA384"
+	msg " 6) SHA512"
+	msg "quanto maior o número da opção, mais seguro, porém é mais lento para crip./decrip."
+
+	read -p "Digite o NÚMERO da opção (padrão = SHA256): " _gpgconf_hash
+
+	case ${_gpgconf_hash} in
+	1|sha1*|SHA1*)     _gpgconf_hash=SHA1      ;;
+	2|rip*|RIP*)     _gpgconf_hash=RIPEMD160 ;;
+	3|sha22*|SHA22*) _gpgconf_hash=SHA224    ;;
+	4|sha25*|SHA25*) _gpgconf_hash=SHA256    ;;
+	5|sha3*|SHA3*) _gpgconf_hash=SHA384    ;;
+	6|sha5*|SHA5*) _gpgconf_hash=SHA512    ;;
+	*)               _gpgconf_hash=SHA256    ;;
+	esac
+	msg ""
+	warn "s2k-digest-algo=${_gpgconf_hash}"
+
+	msg ""
+	msg "[s2k-cipher-algo] método de criptografia"
+	msg "define o método de criptografia que será utilizado."
+	msg " 1)  IDEA"
+	msg " 2)  3DES"
+	msg " 3)  CAST5"
+	msg " 4)  BLOWFISH"
+	msg " 5)  AES"
+	msg " 6)  AES192"
+	msg " 7)  AES256"
+	msg " 8)  TWOFISH"
+       	msg " 9)  CAMELLIA128"
+	msg " 10) CAMELLIA192"
+	msg " 11) CAMELLIA256"
+	msg "recomenda-se utilizar AES256, CARAMELLIA256 ou TWOFISH"
+	msg "TWOFISH é mais forte comparado a AES/CARAMELLIA, porém é muito mais"
+	msg "lento para o processo de criptografia/descriptografia."
+
+	read -p "Digite o NÚMERO da opção (padrão = AES256): " _gpgconf_cipher
+
+	case ${_gpgconf_cipher} in
+	1|ide*|IDE*)                _gpgconf_cipher=IDEA        ;;
+	2|3des|3DES)                _gpgconf_cipher=3DES        ;;
+	3|cast5|CAST5)              _gpgconf_cipher=CAST5       ;;
+	4|blow*|BLOW*)              _gpgconf_cipher=BLOWFISH    ;;
+	5|aes|AES)                  _gpgconf_cipher=AES         ;;
+	6|aes1*|AES1*)            _gpgconf_cipher=AES192      ;;
+	7|aes2*|AES2*)            _gpgconf_cipher=AES256      ;;
+	8|two*|TWO*)                _gpgconf_cipher=TWOFISH     ;;
+	9|camellia12*|CAMELLIA12*)  _gpgconf_cipher=CAMELLIA128 ;;
+	10|camellia19*|CAMELLIA19*) _gpgconf_cipher=CAMELLIA192 ;;
+	11|camellia2*|CAMELLIA2*) _gpgconf_cipher=CAMELLIA256 ;;
+	*)                          _gpgconf_cipher=AES256      ;;
+	esac
+	msg ""
+	warn "s2k-cipher-algo=${_gpgconf_cipher}"
+
+	msg ""
+	msg "resultado:"
+	msg " s2k-mode        = ${_gpgconf_mode}"
+	msg " s2k-count       = ${_gpgconf_int}"
+	msg " s2k-digest-algo = ${_gpgconf_hash}"
+	msg " s2k-cipher-algo = ${_gpgconf_cipher}"
+	msg ""
+
+	[ -e ${_ckx_lib} ] || {
+		mkdir ${_ckx_lib} 2>&-
+		:>${_ckx_lib}/gpgconf
+	} && warn "${_ckx_lib}/gpgconf criado"
+
+	msg "# https://www.gnupg.org/documentation/manpage.html">${_ckx_lib}/gpgconf
+	msg "declare s2k_mode=${_gpgconf_mode}">>${_ckx_lib}/gpgconf
+	msg "declare s2k_count=${_gpgconf_int}">>${_ckx_lib}/gpgconf
+	msg "declare s2k_digest_algo=${_gpgconf_hash}">>${_ckx_lib}/gpgconf
+	msg "declare s2k_cipher_algo=${_gpgconf_cipher}">>${_ckx_lib}/gpgconf
+
+	msg ""
+	msg "gpgconf:"
+	msg "$(<"${_ckx_lib}/gpgconf")" && sucess "gpgconf configurado com sucesso"
+
+	exit ${_ckx_true}
+}
+
+########################################################################################
+#
 # função principal
 #
 ########################################################################################
 
+_main_encrypt()
+{
+	case "$1" in
+
+	-d)
+		gpg --quiet -o data.tar \
+		--no-symkey-cache \
+		-d data.tar.gpg || \
+		{
+			die "Algum erro ocorreu."
+		}
+	;;
+
+	-e)
+		gpg --no-symkey-cache \
+		--s2k-mode ${s2k_mode:=3} \
+		--s2k-count ${s2k_count:=65536} \
+		--s2k-digest-algo ${s2k_digest_algo:=SHA256} \
+		--s2k-cipher-algo ${s2k_cipher_algo:=AES256} \
+		-c data.tar || \
+		{
+			die "Algum erro ocorreu."
+		}
+	;;
+
+	esac
+}
+
 main()
 {
-	local __commands__=
-
-	#clear
+	local __commands__
 
 	cd ${_ckx_dir}
 
 	[[ -e "${_ckx_dir}/data.tar.gpg" ]] && {
-		gpg --quiet -o data.tar --no-symkey-cache \
-		-d data.tar.gpg || \
-		{
-			die "Operação cancelada ou senha incorreta."
-		}
+		_main_encrypt -d && sucess "arquivos descriptografados"
 
-		tar -xvf data.tar
+		tar -xvf data.tar && sucess "arquivos descompactados"
 
-		rm -vr data{.tar,.tar.gpg}
+		rm -r data{.tar,.tar.gpg} && sucess "cache removido"
 	}
 
 	[[ -d "${_ckx_dir}/data/" ]] || {
-		mkdir -p ./data/ 2>&-
+		mkdir -p ./data/ 2>&- && sucess "diretório data criado"
 	}
 
 	# desativando CTRL+C
-	trap "echo utilize o comando 'exit' para sair." SIGINT
+	trap "echo utilize o comando 'exit' para sair. 'break' para forçar saída" SIGINT SIGQUIT
 
-	msg "\e[1;31m --||////[CRYPTOKNIGHTX]////>\e[m"
+	msg "\e[1;31m SEJA BEM-VINDO --||////[CRYPTOKNIGHTX]////>\e[m"
+
+	cd ${_ckx_dir}/data/
 
 	while :; do
 		read -ep $'\e[1;31m<ckx> \e[m' __commands__
 
 		case "$__commands__" in
 
-			exit|quit)
-				cd ${_ckx_dir}
+		exit|quit)
+			cd ${_ckx_dir}
 
-				tar -cvf data.tar ./data/
+			tar -cf data.tar ./data/ && sucess "arquivos compactados"
 
-				gpg --no-symkey-cache -c --cipher-algo \
-				AES256 data.tar || continue
+			_main_encrypt -e && sucess "arquivos criptografados"
 
-				rm -vr ./data/ data.tar
+			rm -r ./data/ data.tar && sucess "cache removido"
 
-				cd ${_global_cdpath}
+			cd ${_global_cdpath}
 
-				trap - SIGINT
-				exit ${_ckx_true}
-			;;
+			trap - SIGINT SIGQUIT
+			exit ${_ckx_true}
+		;;
 
-			*)
-				eval "${__commands__}"
-			;;
+		*)
+			eval "${__commands__}"
+		;;
 
 		esac # esac __commands__
 	done # while main
@@ -307,21 +522,25 @@ main()
 #----------------------------------------------------------------------------------+
 ####################################### SCRIPT #####################################
 
-# Parametros para rodar em linha
-case "$1" in #dev
+if [[ "$#" = '0' ]]; then
+	short_license
+else
+	case "$1" in
 
-	-s|--start) main ;;
+		-s|--start) main ;;
 
-	-h|--help) display_help ;;
+		-h|--help) display_help ;;
 
-	-l|--license) display_license ;;
+		-l|--license) display_license ;;
 
-	-v|--version) display_version ;;
+		-v|--version) display_version ;;
 
-	*) short_license ;;
+		--enc-config|-gpgconf) libgpgconf ;;
 
-esac
+		*) display_error "$1" ;;
 
+	esac
+fi
 
 ##################################### END SCRIPT ###################################
 #----------------------------------------------------------------------------------+
