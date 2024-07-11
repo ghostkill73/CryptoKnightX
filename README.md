@@ -1,5 +1,3 @@
-<html>
-
 <div align="center">
 <img src="ckx-img.png" alt=”Banner” style="width:80%">
 <p>banner by _surowo (discord)</p>
@@ -75,10 +73,22 @@ provavelmente dependências mais antigas irão funcionar corretamente.</b>
 <pre><code>sudo ./ckx --start</code></pre>
 <p>como super usuário para iniciar o software, será necessário digitar a senha de root.</p>
 <br>
-<p>crie alguns arquivos para fim de testes e dentro da subshell, depois utilize o comando <code>exit</code> ou <code>quit</code>
+<p>crie alguns arquivos e depois utilize o comando <code>exit</code> ou <code>quit</code>
 para criptografar os arquivos e sair, será exigido uma senha para a respectiva encriptação,
-não perca a senha de jeito algum!</p>
+não perca a senha de jeito algum!
+   
+Para acessar novamente será preciso digitar a senha que foi
+digitada antes.</p>
 
+<h3>Comandos: </h3>
+<pre>
+   -h, --help                 exibe esta mensagem e termina.
+   -v, --version              exibe a versão do software e termina.
+   -l, --license              exibe a licença do software e termina.
+   -s, --start                inicia o software.
+   -gpgconf, --enc-config     opção para configurar a criptografia no
+                              modo questionário.   
+</pre>
 
 <!---DONATE--->
 
@@ -86,6 +96,3 @@ não perca a senha de jeito algum!</p>
 <br>
 <h2 align="center">Donate</h2>
 <p align="center">bitcoin: bc1qq77c3w5l97da0pjn6d4dx9zueys29p799q7heq</p>
-
-
-</html>
