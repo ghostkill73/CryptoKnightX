@@ -1,5 +1,5 @@
 <div align="center">
-<img src="ckx-img.png" alt=”Banner” style="width:80%">
+<img src="banner.png" alt=”Banner”>
 <p>banner by _surowo (discord)</p>
 </div>
 
@@ -12,7 +12,7 @@
 
 <div align="center">
 <a href="https://www.gnu.org/software/bash/" target="_blank"><img src="https://badgen.net/badge/Made with/Bash/green?icon"></a>
-<img src="https://badgen.net/badge/Version/v0.0.3.1b/red?icon">
+<img src="https://badgen.net/badge/Version/v0.0.3.2b/red?icon">
 <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank"><img src="https://badgen.net/badge/Free Software/GPLv3.0+/black?icon"></a>
 </div>
 
@@ -56,9 +56,18 @@ provavelmente dependências mais antigas irão funcionar corretamente.</b>
 
 <br>
 <h2 align="center">Como instalar?</h2>
-<p>Utilize o comando <code>git clone</code> para instalar o repositório:</p>
-<pre><code>git clone https://github.com/ghostkill73/CryptoKnightX</code></code></pre>
-
+<p>Utilize o <code>git</code> para instalar o repositório:</p>
+<pre>
+git clone https://github.com/ghostkill73/CryptoKnightX
+cd CryptoKnightX
+chmod +x ckx
+</pre>
+<br>
+<p>usando o <code>wget</code>:</p>
+<pre><code>wget https://raw.githubusercontent.com/ghostkill73/CryptoKnightX/main/ckx && chmod +x ckx</code></pre>
+<br>
+<p>usando o <code>curl</code>:</p>
+<pre><code>curl -L https://raw.githubusercontent.com/ghostkill73/CryptoKnightX/main/ckx >> ckx && chmod +x ckx</code></pre>
 
 <!---COMO UTILIZAR--->
 
