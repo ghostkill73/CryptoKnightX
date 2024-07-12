@@ -1,6 +1,6 @@
-<div align="center">
-<img src="banner.png" alt=”Banner”>
-<p>banner by _surowo (discord)</p>
+<div>
+<img src="banner.png" alt=”banner”>
+<!---banner by _surowo (discord)--->
 </div>
 
 
@@ -24,7 +24,7 @@ objetivo deste software é manter sua privacidade e integridade de seus arquivos
 
 <!---SUMARIO--->
 
-
+<!---
 <br>
 <h2 align="center">Sumário</h2>
 <a href="https://github.com/ghostkill73/CryptoKnightX?tab=readme-ov-file#dependências" target="_blank">1. Dependências</a>
@@ -34,7 +34,7 @@ objetivo deste software é manter sua privacidade e integridade de seus arquivos
 <a href="https://github.com/ghostkill73/CryptoKnightX?tab=readme-ov-file#como-utilizar" target="_blank">3. Como utilizar?</a>
 <br>
 <a href="https://github.com/ghostkill73/CryptoKnightX?tab=readme-ov-file#donate" target="_blank">4. Donate</a>
-
+--->
 
 <!---DEPENDENCIAS--->
 
@@ -75,12 +75,9 @@ chmod +x ckx
 <br>
 <h2 align="center">Como utilizar?</h2>
 
-<p>primeiro entre na pasta do software utilizando o comando</p>
-<pre><code>cd CryptoKnightX</code></pre>
-
-<p>Após isso, execute o comando</p>
+<p>Para iniciar o software, execute o comando como usuário root:</p>
 <pre><code>sudo ./ckx --start</code></pre>
-<p>como super usuário para iniciar o software, será necessário digitar a senha de root.</p>
+
 <br>
 <p>crie alguns arquivos e depois utilize o comando <code>exit</code> ou <code>quit</code>
 para criptografar os arquivos e sair, será exigido uma senha para a respectiva encriptação,
@@ -89,15 +86,23 @@ não perca a senha de jeito algum!
 Para acessar novamente será preciso digitar a senha que foi
 digitada antes.</p>
 
-<h3>Comandos: </h3>
+<h4>Comandos:</h4>
 <pre>
-   -h, --help                 exibe esta mensagem e termina.
-   -v, --version              exibe a versão do software e termina.
-   -l, --license              exibe a licença do software e termina.
-   -s, --start                inicia o software.
-   -gpgconf, --enc-config     opção para configurar a criptografia no
-                              modo questionário.   
+-h, --help                 exibe esta mensagem e termina.
+-v, --version              exibe a versão do software e termina.
+-l, --license              exibe a licença do software e termina.
+-s, --start                inicia o software.
+-gpgconf, --enc-config     opção para configurar a criptografia no
+                           modo questionário.   
 </pre>
+
+<h4>configurando o gpg:</h4>
+
+<pre><code>sudo ./ckx -gpgcongf</code></pre>
+
+<p>Esse comando vai facilitar o processo de configuração da criptografia
+simétrica do gpg.</p>
+
 
 <!---DONATE--->
 
