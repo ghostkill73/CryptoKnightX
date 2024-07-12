@@ -512,7 +512,17 @@ main()
 	# desativando CTRL+C
 	trap "echo ou utilize o comando 'exit' para sair ou 'break' para forçar saída." SIGINT SIGQUIT
 
-	msg "\e[1;31m SEJA BEM-VINDO --||////[CRYPTOKNIGHTX]////>\e[m"
+	msg "\e[1;31m"
+	msg '             ▄▄█▀▀▀█▄█████▀ ▀███▀▀███▀   ▀██▀'
+	msg '           ▄██▀     ▀█ ██   ▄█▀    ███▄  ▄█'
+	msg '           ██▀       ▀ ██ ▄█▀       ▀██▄█▀'
+	msg '           ██          █████▄         ███'
+	msg '           ██▄         ██  ███      ▄█▀▀██▄'
+	msg '           ▀██▄     ▄▀ ██   ▀██▄   ▄█   ▀██▄'
+	msg '             ▀▀█████▀▄████▄   ███▄██▄▄  ▄▄███▄'
+	msg " a soldier's bravery is only recognized on the battlefield"
+	msg "               --||////[CRYPTOKNIGHTX]////>"
+	msg "\e[m"
 
 	cd ${_ckx_dir}/data/
 
@@ -522,6 +532,8 @@ main()
 		case "$__commands__" in
 
 		exit|quit)
+			trap ' ' SIGINT SIGQUIT
+
 			cd ${_ckx_dir}
 
 			tar -cf data.tar ./data/ && sucess "arquivos compactados"
@@ -533,6 +545,7 @@ main()
 			cd ${_global_cdpath}
 
 			trap - SIGINT SIGQUIT
+
 			exit ${_ckx_true}
 		;;
 
@@ -549,7 +562,9 @@ main()
 ####################################### SCRIPT #####################################
 
 if [[ "$#" = '0' ]]; then
+
 	short_license
+
 else
 	case "$1" in
 
