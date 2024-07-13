@@ -12,7 +12,7 @@
 
 <div align="center">
 <a href="https://www.gnu.org/software/bash/" target="_blank"><img src="https://badgen.net/badge/Made with/Bash/green?icon"></a>
-<img src="https://badgen.net/badge/Version/v0.0.3.2b/red?icon">
+<img src="https://badgen.net/badge/Version/0.0.3.2-beta/red?icon">
 <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank"><img src="https://badgen.net/badge/Free Software/GPLv3.0+/black?icon"></a>
 </div>
 
@@ -36,6 +36,7 @@ objetivo deste software é manter sua privacidade e integridade de seus arquivos
 <a href="https://github.com/ghostkill73/CryptoKnightX?tab=readme-ov-file#donate" target="_blank">4. Donate</a>
 --->
 
+
 <!---DEPENDENCIAS--->
 
 
@@ -51,12 +52,21 @@ objetivo deste software é manter sua privacidade e integridade de seus arquivos
 <b>OBS: as versões exigidas podem não corresponder com a realidade, o software está em fase de testes.
 provavelmente dependências mais antigas irão funcionar corretamente.</b>
 
+
 <!---COMO INSTALAR--->
 
 
 <br>
 <h2 align="center">Como instalar?</h2>
-<p>Utilize o <code>git</code> para instalar o repositório:</p>
+<p>Acesse a última release ou faça o download usando <code>wget</code>:</p>
+<pre>
+wget https://github.com/ghostkill73/CryptoKnightX/releases/download/v0.0.3.2-beta/ckx-0.0.3.2-beta.tar.gz
+tar -xvf ckx-0.0.3.2-beta.tar.gz
+</pre>
+
+<br><br>
+<p>caso queira instalar a versão mais recente, utilize o <code>git</code>:</p>
+
 <pre>
 git clone https://github.com/ghostkill73/CryptoKnightX
 cd CryptoKnightX
@@ -68,6 +78,8 @@ chmod +x ckx
 <br>
 <p>usando o <code>curl</code>:</p>
 <pre><code>curl -L https://raw.githubusercontent.com/ghostkill73/CryptoKnightX/main/ckx >> ckx && chmod +x ckx</code></pre>
+<br>
+
 
 <!---COMO UTILIZAR--->
 
@@ -75,7 +87,7 @@ chmod +x ckx
 <br>
 <h2 align="center">Como utilizar?</h2>
 
-<p>Para iniciar o software, execute o comando como usuário root:</p>
+<p>Para iniciar o software:</p>
 <pre><code>sudo ./ckx --start</code></pre>
 
 <br>
