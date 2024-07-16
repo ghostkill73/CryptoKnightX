@@ -3,7 +3,7 @@
 # autor  : Abner Benedito
 # github : ghostkill73
 #
-declare _ckx_version="v0.0.4b"
+declare _ckx_version="v0.0.4-dev"
 #
 # licença: GPLv3+
 #----------------------------------------------------------------------------------+
@@ -100,6 +100,7 @@ declare _ckx_version="v0.0.4b"
 
 #set -x
 
+
 ########################################################################################
 #
 # Variáveis globais
@@ -150,8 +151,6 @@ sucess()
 warn()
 {
 	msg "\e[1;33m[#] ${*}\e[m"
-
-	return ${_ckx_true}
 }
 
 
@@ -274,7 +273,7 @@ display_help()
 #
 ########################################################################################
 
-source ${_ckx_lib}/gpgconf 2>&- || warn "gpgconf não encontrado... utilizando configurações padrão."
+source ${_ckx_lib}/gpgconf 2>&-
 # gpgconf padrão
 : ${s2k_mode:=3}
 : ${s2k_count:=65536}
@@ -428,7 +427,7 @@ libgpgconf()
 	msg " s2k-cipher-algo = ${_gpgconf_cipher}"
 	msg ""
 
-	[ -e ${_ckx_lib} ] || {
+	[[ -e ${_ckx_lib} ]] || {
 		mkdir ${_ckx_lib} 2>&-
 		:>${_ckx_lib}/gpgconf
 	} && warn "${_ckx_lib}/gpgconf criado"
@@ -457,7 +456,7 @@ _main_encrypt()
 	local _enc_opt="$1"
 	local _enc_dir="$2"
 
-	case "$_enc_opt" in
+	case ${_enc_opt} in
 
 	-d) # descritografando
 		sucess "${_enc_dir} -> iniciando descriptografia"
@@ -532,13 +531,23 @@ _main_encrypt()
 	esac
 }
 
+_main_help()
+{
+	msg "SELECT -> seleciona um diretório              (SELECT 'dir')"
+	msg "CREATE -> cria um novo diretório              (CREATE 'dir')"
+	msg "REMOVE -> remove permanentemente um diretório (REMOVE 'dir')"
+	msg "LIST   -> lista os diretórios"
+	msg "CLEAR  -> limpa a tela"
+	msg "HELP   -> exibe os comandos"
+}
+
 main()
 {
-	local __commands__ __main__ __main2__ __yorn__
+	local _main_command __main__ __main2__ _main_yorn
 
 	cd ${_ckx_dir}
 
-	[[ -d "${_ckx_data}" ]] || {
+	[[ -d ${_ckx_data} ]] || {
 		mkdir -p ${_ckx_data} 2>&- && sucess "diretório ${_ckx_data} criado"
 	}
 
@@ -547,9 +556,9 @@ main()
 	msg "diretórios disponíveis:"
 	msg ""
 	for i in *; {
-		if [[ -d "$i" ]]; then
+		if [[ -d $i ]]; then
 			msg "\e[1;31m[+] ${i##*/} (descriptografado)\e[m"
-		elif [[ -e "$i" ]]; then
+		elif [[ -e $i ]]; then
 			msg "\e[1;32m[+] ${i##*/}\e[m"
 		else
 			shift
@@ -557,19 +566,16 @@ main()
 	}
 	msg ""
 
-	msg "SELECT -> seleciona um diretório              (SELECT 'dir')"
-	msg "CREATE -> cria um novo diretório              (CREATE 'dir')"
-	msg "REMOVE -> remove permanentemente um diretório (REMOVE 'dir')"
-	msg "LIST   -> lista os diretórios"
+	_main_help
 
 	while :; do
-		read -ep "ckx> " __main__ __main2__
+		read -ep 'ckx> ' __main__ __main2__
 
 		__main2__=${__main2__%/}
 
 		case ${__main__} in
 
-		SELECT|select)
+		SELECT|SEL|select|sel|CD|cd)
 			if [[ -d ${__main2__} ]]; then
 				break
 			elif [[ -e ${__main2__} ]]; then
@@ -577,25 +583,34 @@ main()
 				break
 			else
 				warn "${__main2__} não encontrado... digite novamente"
-				continue
 			fi
 		;;
 
-		CREATE|create)
-			mkdir ${__main2__} && sucess "${__main2__} -> criado com sucesso"
-			break
+		CREATE|CR|create|cr)
+			if [[ -d ${__main2__} ]]; then
+				mkdir ${__main2__} && sucess "${__main2__} -> criado com sucesso"
+				break
+			else
+				warn "${__main2__} já existe"
+			fi
 		;;
 
-		REMOVE|remove)
-			warn "você deseja remover ${__main2__}? (yes/N*)"
-			read __yorn__
+		REMOVE|RM|remove|rm)
+			[[ -e ${__main2__} ]] || [[ -d ${__main2__} ]] || {
+				warn "${__main2__} não foi encontrado..."
+				continue
+			}
 
-			case ${__yorn__} in
+			warn "você deseja remover ${__main2__}? (yes/N*)"
+			read _main_yorn
+
+
+			case ${_main_yorn} in
 				yes)
 					warn "você tem certeza? (yes/N*)"
-					read __yorn__
+					read _main_yorn
 
-					case ${__yorn__} in
+					case ${_main_yorn} in
 						yes)
 							rm -rf ${__main2__} && \
 							sucess "${__main2__} removido com sucesso"
@@ -603,19 +618,17 @@ main()
 
 						*)
 							warn "operação cancelada"
-							continue
 						;;
 					esac
 				;;
 
 				*)
 					warn "operação cancelada"
-					continue
 				;;
 			esac
 		;;
 
-		LIST)
+		LIST|LS|list|ls)
 			for i in *; {
 				if [[ -d "$i" ]]; then
 					msg "\e[1;31m[+] ${i##*/} (descriptografado)\e[m"
@@ -627,9 +640,16 @@ main()
 			}
 		;;
 
+		HELP|help)
+			_main_help
+		;;
+
+		CLEAR|CL|clear|cl)
+			clear
+		;;
+
 		*)
 			warn "comando ${__main__} não encontrado..."
-			continue
 		;;
 
 		esac
@@ -653,9 +673,9 @@ main()
 	msg "\e[m"
 
 	while :; do
-		read -ep $'\e[1;31m<ckx>\e[m ' __commands__
+		read -ep $'\e[1;31m<ckx>\e[m ' _main_command
 
-		case "$__commands__" in
+		case "$_main_command" in
 
 		exit|quit)
 			trap ' ' SIGINT SIGQUIT
@@ -670,10 +690,10 @@ main()
 		;;
 
 		*)
-			eval "${__commands__}"
+			eval "${_main_command}"
 		;;
 
-		esac # esac __commands__
+		esac # esac _main_command
 	done # while main
 }
 
@@ -686,7 +706,7 @@ if [[ "$#" = '0' ]]; then
 	short_license
 
 else
-	case "$1" in
+	case ${1} in
 
 		-s|--start) main ;;
 
