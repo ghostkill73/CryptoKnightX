@@ -3,7 +3,7 @@
 # autor  : Abner Benedito
 # github : ghostkill73
 #
-declare _ckx_version="v0.0.3.2b"
+declare _ckx_version="v0.0.4b"
 #
 # licença: GPLv3+
 #----------------------------------------------------------------------------------+
@@ -98,9 +98,7 @@ declare _ckx_version="v0.0.3.2b"
 #
 ########################################################################################
 
-# export _ckx_debug=0
-[[ "${_ckx_debug:=1}" = '0' ]] && set -x
-
+#set -x
 
 ########################################################################################
 #
@@ -115,6 +113,7 @@ declare _ckx_version="v0.0.3.2b"
 declare _ckx_software_name="CryptoKnightX"
 declare _ckx_dir="$HOME/.ckx"
 declare _ckx_lib="${_ckx_dir}/lib"
+declare _ckx_data="${_ckx_dir}/data"
 
 declare _ckx_true=0
 declare _ckx_false=1
@@ -186,7 +185,8 @@ warn()
 # verificando se $HOME/.ckx existe, caso contrário cria o diretório.
 [[ -d "$_ckx_dir" ]] || {
 	mkdir -p "$_ckx_dir" 2>&-
-	mkdir -p "${_ckx_dir}/{lib,data}" 2>&-
+	mkdir -p "${_ckx_lib}" 2>&-
+	mkdir -p "${_ckx_data}" 2>&-
 }
 
 
@@ -454,37 +454,78 @@ libgpgconf()
 
 _main_encrypt()
 {
-	case "$1" in
+	local _enc_opt="$1"
+	local _enc_dir="$2"
+
+	case "$_enc_opt" in
 
 	-d) # descritografando
-		gpg --quiet -o data.tar \
+		sucess "${_enc_dir} -> iniciando descriptografia"
+
+		gpg --quiet -o ${_enc_dir%.gpg} \
 		--no-symkey-cache \
-		-d data.tar.gpg || \
+		-d ${_enc_dir} && sucess "${_enc_dir} -> arquivos descriptografados" || \
 		{
 			die "Algum erro ocorreu."
 		}
+
+		tar -xf ${_enc_dir%.gpg} && sucess "${_enc_dir%.gpg} -> arquivos descompactados"
+
+		rm -r ${_enc_dir} ${_enc_dir%.gpg} && sucess "cache removido"
 	;;
 
 	-e) # criptografando
-		if [[ "$s2k_mode" = '3' ]]; then
-			gpg --no-symkey-cache \
-			--s2k-mode ${s2k_mode} \
-			--s2k-count ${s2k_count} \
-			--s2k-digest-algo ${s2k_digest_algo} \
-			--s2k-cipher-algo ${s2k_cipher_algo} \
-			-c data.tar || \
-			{
-				die "Algum erro ocorreu."
-			}
+		cd ${_ckx_data}
+
+		if [[ -d ${_enc_dir} ]]; then
+			tar -cf ${_enc_dir}.tar ./${_enc_dir}/ && sucess "arquivos compactados"
+
+			if [[ "$s2k_mode" = '3' ]]; then
+				gpg --no-symkey-cache \
+				--s2k-mode ${s2k_mode} \
+				--s2k-count ${s2k_count} \
+				--s2k-digest-algo ${s2k_digest_algo} \
+				--s2k-cipher-algo ${s2k_cipher_algo} \
+				-c ${_enc_dir}.tar || \
+				{
+					die "Algum erro ocorreu."
+				}
+			else
+				gpg --no-symkey-cache \
+				--s2k-mode ${s2k_mode} \
+				--s2k-digest-algo ${s2k_digest_algo} \
+				--s2k-cipher-algo ${s2k_cipher_algo} \
+				-c ${_enc_dir}.tar || \
+				{
+					die "Algum erro ocorreu."
+				}
+			fi
+
+			rm -r ${_enc_dir}.tar ./${_enc_dir}/ && sucess "cache removido"
 		else
-			gpg --no-symkey-cache \
-			--s2k-mode ${s2k_mode} \
-			--s2k-digest-algo ${s2k_digest_algo} \
-			--s2k-cipher-algo ${s2k_cipher_algo} \
-			-c data.tar || \
-			{
-				die "Algum erro ocorreu."
-			}
+			tar -cf ${_enc_dir%.gpg} ./${_enc_dir%.tar.gpg}/ && sucess "arquivos compactados"
+
+			if [[ "$s2k_mode" = '3' ]]; then
+				gpg --no-symkey-cache \
+				--s2k-mode ${s2k_mode} \
+				--s2k-count ${s2k_count} \
+				--s2k-digest-algo ${s2k_digest_algo} \
+				--s2k-cipher-algo ${s2k_cipher_algo} \
+				-c ${_enc_dir%.gpg} || \
+				{
+					die "Algum erro ocorreu."
+				}
+			else
+				gpg --no-symkey-cache \
+				--s2k-mode ${s2k_mode} \
+				--s2k-digest-algo ${s2k_digest_algo} \
+				--s2k-cipher-algo ${s2k_cipher_algo} \
+				-c ${_enc_dir%.gpg} || \
+				{
+					die "Algum erro ocorreu."
+				}
+			fi
+			rm -r ${_enc_dir%.gpg} ${_enc_dir%.tar.gpg} && sucess "cache removido"
 		fi
 	;;
 
@@ -493,21 +534,108 @@ _main_encrypt()
 
 main()
 {
-	local __commands__
+	local __commands__ __main__ __main2__ __yorn__
 
 	cd ${_ckx_dir}
 
-	[[ -e "${_ckx_dir}/data.tar.gpg" ]] && {
-		_main_encrypt -d && sucess "arquivos descriptografados"
-
-		tar -xf data.tar && sucess "arquivos descompactados"
-
-		rm -r data{.tar,.tar.gpg} && sucess "cache removido"
+	[[ -d "${_ckx_data}" ]] || {
+		mkdir -p ${_ckx_data} 2>&- && sucess "diretório ${_ckx_data} criado"
 	}
 
-	[[ -d "${_ckx_dir}/data/" ]] || {
-		mkdir -p ./data/ 2>&- && sucess "diretório data criado"
+	cd ${_ckx_data}
+
+	msg "diretórios disponíveis:"
+	msg ""
+	for i in *; {
+		if [[ -d "$i" ]]; then
+			msg "\e[1;31m[+] ${i##*/} (descriptografado)\e[m"
+		elif [[ -e "$i" ]]; then
+			msg "\e[1;32m[+] ${i##*/}\e[m"
+		else
+			shift
+		fi
 	}
+	msg ""
+
+	msg "SELECT -> seleciona um diretório              (SELECT 'dir')"
+	msg "CREATE -> cria um novo diretório              (CREATE 'dir')"
+	msg "REMOVE -> remove permanentemente um diretório (REMOVE 'dir')"
+	msg "LIST   -> lista os diretórios"
+
+	while :; do
+		read -ep "ckx> " __main__ __main2__
+
+		__main2__=${__main2__%/}
+
+		case ${__main__} in
+
+		SELECT|select)
+			if [[ -d ${__main2__} ]]; then
+				break
+			elif [[ -e ${__main2__} ]]; then
+				_main_encrypt -d ${__main2__}
+				break
+			else
+				warn "${__main2__} não encontrado... digite novamente"
+				continue
+			fi
+		;;
+
+		CREATE|create)
+			mkdir ${__main2__} && sucess "${__main2__} -> criado com sucesso"
+			break
+		;;
+
+		REMOVE|remove)
+			warn "você deseja remover ${__main2__}? (yes/N*)"
+			read __yorn__
+
+			case ${__yorn__} in
+				yes)
+					warn "você tem certeza? (yes/N*)"
+					read __yorn__
+
+					case ${__yorn__} in
+						yes)
+							rm -rf ${__main2__} && \
+							sucess "${__main2__} removido com sucesso"
+						;;
+
+						*)
+							warn "operação cancelada"
+							continue
+						;;
+					esac
+				;;
+
+				*)
+					warn "operação cancelada"
+					continue
+				;;
+			esac
+		;;
+
+		LIST)
+			for i in *; {
+				if [[ -d "$i" ]]; then
+					msg "\e[1;31m[+] ${i##*/} (descriptografado)\e[m"
+				elif [[ -e "$i" ]]; then
+					msg "\e[1;32m[+] ${i##*/}\e[m"
+				else
+					shift
+				fi
+			}
+		;;
+
+		*)
+			warn "comando ${__main__} não encontrado..."
+			continue
+		;;
+
+		esac
+	done
+
+	cd ${__main2__%.tar.gpg}
 
 	# desativando CTRL+C
 	trap "echo ou utilize o comando 'exit' para sair ou 'break' para forçar saída." SIGINT SIGQUIT
@@ -524,23 +652,15 @@ main()
 	msg "               --||////[CRYPTOKNIGHTX]////>"
 	msg "\e[m"
 
-	cd ${_ckx_dir}/data/
-
 	while :; do
-		read -ep $'\e[1;31m<ckx> \e[m' __commands__
+		read -ep $'\e[1;31m<ckx>\e[m ' __commands__
 
 		case "$__commands__" in
 
 		exit|quit)
 			trap ' ' SIGINT SIGQUIT
 
-			cd ${_ckx_dir}
-
-			tar -cf data.tar ./data/ && sucess "arquivos compactados"
-
-			_main_encrypt -e && sucess "arquivos criptografados"
-
-			rm -r ./data/ data.tar && sucess "cache removido"
+			_main_encrypt -e ${__main2__} && sucess "arquivos criptografados"
 
 			cd ${_global_cdpath}
 
@@ -582,6 +702,8 @@ else
 
 	esac
 fi
+
+exit ${_ckx_true}
 
 ##################################### END SCRIPT ###################################
 #----------------------------------------------------------------------------------+
