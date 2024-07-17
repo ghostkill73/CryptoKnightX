@@ -587,7 +587,7 @@ main()
 		;;
 
 		CREATE|CR|create|cr)
-			if [[ -d ${__main2__} ]]; then
+			if [[ ! -d ${__main2__} ]]; then
 				mkdir ${__main2__} && sucess "${__main2__} -> criado com sucesso"
 				break
 			else
