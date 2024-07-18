@@ -12,7 +12,7 @@
 
 <div align="center">
 <a href="https://www.gnu.org/software/bash/" target="_blank"><img src="https://badgen.net/badge/Made with/Bash/green?icon"></a>
-<img src="https://badgen.net/badge/Version/0.0.3.2-beta/red?icon">
+<img src="https://badgen.net/badge/Version/0.0.4/red?icon">
 <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank"><img src="https://badgen.net/badge/Free Software/GPLv3.0+/black?icon"></a>
 </div>
 
@@ -60,8 +60,8 @@ provavelmente dependências mais antigas irão funcionar corretamente.</b>
 <h2 align="center">Como instalar?</h2>
 <p>Acesse a última release ou faça o download usando <code>wget</code>:</p>
 <pre>
-wget https://github.com/ghostkill73/CryptoKnightX/releases/download/v0.0.3.2-beta/ckx-0.0.3.2-beta.tar.gz
-tar -xvf ckx-0.0.3.2-beta.tar.gz
+wget https://github.com/ghostkill73/CryptoKnightX/releases/download/0.0.4/ckx-0.0.4.tar.gz
+tar -xvf ckx-0.0.4.tar.gz
 </pre>
 
 <br><br>
