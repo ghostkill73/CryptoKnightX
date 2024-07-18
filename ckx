@@ -138,14 +138,14 @@ die()
 {
 	msg "\e[41m[!] ${*}\e[m"
 
-	exit ${_ckx_error}
+	exit "$_ckx_error"
 }
 
 sucess()
 {
 	msg "\e[1;32m[*] ${*}\e[m"
 
-	return ${_ckx_true}
+	return "$_ckx_true"
 }
 
 warn()
@@ -184,8 +184,8 @@ warn()
 # verificando se $HOME/.ckx existe, caso contrário cria o diretório.
 [[ -d "$_ckx_dir" ]] || {
 	mkdir -p "$_ckx_dir" 2>&-
-	mkdir -p "${_ckx_lib}" 2>&-
-	mkdir -p "${_ckx_data}" 2>&-
+	mkdir -p "$_ckx_lib" 2>&-
+	mkdir -p "$_ckx_data" 2>&-
 }
 
 
@@ -204,7 +204,7 @@ short_license()
 	msg ""
 	msg " Digite a opção '--help' para mais detalhes."
 
-	exit ${_ckx_true}
+	exit "$_ckx_true"
 }
 
 display_license()
@@ -224,7 +224,7 @@ display_license()
 	msg " You should have received a copy of the GNU General Public License"
 	msg " along with this program.  If not, see <https://www.gnu.org/licenses/>."
 
-	exit ${_ckx_true}
+	exit "$_ckx_true"
 }
 
 
@@ -232,7 +232,7 @@ display_version()
 {
 	msg " ${_ckx_software_name} ${_ckx_version} <github.com/ghostkill73/CryptoKnightX>"
 
-	exit ${_ckx_true}
+	exit "$_ckx_true"
 }
 
 display_error()
@@ -241,7 +241,7 @@ display_error()
 	msg ""
 	msg " Digite a opção '--help' para mais detalhes."
 
-	exit ${_ckx_false}
+	exit "$_ckx_false"
 }
 
 display_help()
@@ -263,7 +263,7 @@ display_help()
 	msg ""
 	msg "contribua: <github.com/ghostkill73/CryptoKnightX>"
 
-	exit ${_ckx_true}
+	exit "$_ckx_true"
 }
 
 
@@ -306,11 +306,11 @@ libgpgconf()
 
 	read -p 'Deseja prosseguir com a configuração? (y/N) ' _gpgconf_yorn
 
-	case ${_gpgconf_yorn} in
+	case "$_gpgconf_yorn" in
 	[yY]*) :;;
 	[nN]*)
 		warn "operação cancelada"
-		exit ${_ckx_true}
+		exit "$_ckx_true"
 	;;
 	*) die "opção inválida." ;;
 	esac
@@ -324,7 +324,7 @@ libgpgconf()
 
 	read -p 'Digite a opção (padrão = 3): ' _gpgconf_mode
 
-	case ${_gpgconf_mode} in
+	case "$_gpgconf_mode" in
 	0) :;; 1) :;; 3) :;;
 	*) _gpgconf_mode=3 ;;
 	esac
@@ -370,7 +370,7 @@ libgpgconf()
 
 	read -p "Digite o NÚMERO da opção (padrão = SHA256): " _gpgconf_hash
 
-	case ${_gpgconf_hash} in
+	case "$_gpgconf_hash" in
 	1|sha1*|SHA1*)   _gpgconf_hash=SHA1      ;;
 	2|rip*|RIP*)     _gpgconf_hash=RIPEMD160 ;;
 	3|sha22*|SHA22*) _gpgconf_hash=SHA224    ;;
@@ -402,7 +402,7 @@ libgpgconf()
 
 	read -p "Digite o NÚMERO da opção (padrão = AES256): " _gpgconf_cipher
 
-	case ${_gpgconf_cipher} in
+	case "$_gpgconf_cipher" in
 	1|ide*|IDE*)                _gpgconf_cipher=IDEA        ;;
 	2|3des|3DES)                _gpgconf_cipher=3DES        ;;
 	3|cast5|CAST5)              _gpgconf_cipher=CAST5       ;;
@@ -427,8 +427,8 @@ libgpgconf()
 	msg " s2k-cipher-algo = ${_gpgconf_cipher}"
 	msg ""
 
-	[[ -e ${_ckx_lib} ]] || {
-		mkdir ${_ckx_lib} 2>&-
+	[[ -e "$_ckx_lib" ]] || {
+		mkdir "$_ckx_lib" 2>&-
 		:>${_ckx_lib}/gpgconf
 	} && warn "${_ckx_lib}/gpgconf criado"
 
@@ -442,7 +442,7 @@ libgpgconf()
 	msg "gpgconf:"
 	msg "$(<"${_ckx_lib}/gpgconf")" && sucess "gpgconf configurado com sucesso"
 
-	exit ${_ckx_true}
+	exit "$_ckx_true"
 }
 
 ########################################################################################
@@ -456,7 +456,7 @@ _main_encrypt()
 	local _enc_opt="$1"
 	local _enc_dir="$2"
 
-	case ${_enc_opt} in
+	case "$_enc_opt" in
 
 	-d) # descritografando
 		sucess "${_enc_dir} -> iniciando descriptografia"
@@ -474,9 +474,9 @@ _main_encrypt()
 	;;
 
 	-e) # criptografando
-		cd ${_ckx_data}
+		cd "$_ckx_data"
 
-		if [[ -d ${_enc_dir} ]]; then
+		if [[ -d "$_enc_dir" ]]; then
 			tar -cf ${_enc_dir}.tar ./${_enc_dir}/ && sucess "arquivos compactados"
 
 			if [[ "$s2k_mode" = '3' ]]; then
@@ -545,20 +545,20 @@ main()
 {
 	local _main_command __main__ __main2__ _main_yorn
 
-	cd ${_ckx_dir}
+	cd "$_ckx_dir"
 
-	[[ -d ${_ckx_data} ]] || {
-		mkdir -p ${_ckx_data} 2>&- && sucess "diretório ${_ckx_data} criado"
+	[[ -d "$_ckx_data" ]] || {
+		mkdir -p "$_ckx_data" 2>&- && sucess "diretório ${_ckx_data} criado"
 	}
 
-	cd ${_ckx_data}
+	cd "$_ckx_data"
 
 	msg "diretórios disponíveis:"
 	msg ""
 	for i in *; {
-		if [[ -d $i ]]; then
+		if [[ -d "$i" ]]; then
 			msg "\e[1;31m[+] ${i##*/} (descriptografado)\e[m"
-		elif [[ -e $i ]]; then
+		elif [[ -e "$i" ]]; then
 			msg "\e[1;32m[+] ${i##*/}\e[m"
 		else
 			shift
@@ -571,15 +571,15 @@ main()
 	while :; do
 		read -ep 'ckx> ' __main__ __main2__
 
-		__main2__=${__main2__%/}
+		__main2__="${__main2__%/}"
 
-		case ${__main__} in
+		case "$__main__" in
 
 		SELECT|SEL|select|sel|CD|cd)
-			if [[ -d ${__main2__} ]]; then
+			if [[ -d "$__main2__" ]]; then
 				break
-			elif [[ -e ${__main2__} ]]; then
-				_main_encrypt -d ${__main2__}
+			elif [[ -e "$__main2__" ]]; then
+				_main_encrypt -d "$__main2__"
 				break
 			else
 				warn "${__main2__} não encontrado... digite novamente"
@@ -587,8 +587,8 @@ main()
 		;;
 
 		CREATE|CR|create|cr)
-			if [[ ! -d ${__main2__} ]]; then
-				mkdir ${__main2__} && sucess "${__main2__} -> criado com sucesso"
+			if [[ ! -d "$__main2__" ]]; then
+				mkdir "$__main2__" && sucess "${__main2__} -> criado com sucesso"
 				break
 			else
 				warn "${__main2__} já existe"
@@ -596,7 +596,7 @@ main()
 		;;
 
 		REMOVE|RM|remove|rm)
-			[[ -e ${__main2__} ]] || [[ -d ${__main2__} ]] || {
+			[[ -e "$__main2__" ]] || [[ -d "$__main2__" ]] || {
 				warn "${__main2__} não foi encontrado..."
 				continue
 			}
@@ -605,14 +605,14 @@ main()
 			read _main_yorn
 
 
-			case ${_main_yorn} in
+			case "$_main_yorn" in
 				yes)
 					warn "você tem certeza? (yes/N*)"
 					read _main_yorn
 
-					case ${_main_yorn} in
+					case "$_main_yorn" in
 						yes)
-							rm -rf ${__main2__} && \
+							rm -rf "$__main2__" && \
 							sucess "${__main2__} removido com sucesso"
 						;;
 
@@ -655,7 +655,7 @@ main()
 		esac
 	done
 
-	cd ${__main2__%.tar.gpg}
+	cd "${__main2__%.tar.gpg}"
 
 	# desativando CTRL+C
 	trap "echo ou utilize o comando 'exit' para sair ou 'break' para forçar saída." SIGINT SIGQUIT
@@ -680,13 +680,13 @@ main()
 		exit|quit)
 			trap ' ' SIGINT SIGQUIT
 
-			_main_encrypt -e ${__main2__} && sucess "arquivos criptografados"
+			_main_encrypt -e "$__main2__" && sucess "arquivos criptografados"
 
-			cd ${_global_cdpath}
+			cd "$_global_cdpath"
 
 			trap - SIGINT SIGQUIT
 
-			exit ${_ckx_true}
+			exit "$_ckx_true"
 		;;
 
 		*)
@@ -706,7 +706,7 @@ if [[ "$#" = '0' ]]; then
 	short_license
 
 else
-	case ${1} in
+	case "$1" in
 
 		-s|--start) main ;;
 
@@ -723,7 +723,7 @@ else
 	esac
 fi
 
-exit ${_ckx_true}
+exit "$_ckx_true"
 
 ##################################### END SCRIPT ###################################
 #----------------------------------------------------------------------------------+
