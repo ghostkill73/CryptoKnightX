@@ -3,7 +3,7 @@
 # autor  : Abner Benedito
 # github : ghostkill73
 #
-declare _ckx_version="v0.0.4-dev"
+declare _ckx_version="v0.0.5-dev"
 #
 # licença: GPLv3+
 #----------------------------------------------------------------------------------+
@@ -111,6 +111,8 @@ declare _ckx_version="v0.0.4-dev"
 #
 ########################################################################################
 
+set -u
+
 declare _ckx_software_name="CryptoKnightX"
 declare _ckx_dir="$HOME/.ckx"
 declare _ckx_lib="${_ckx_dir}/lib"
@@ -144,8 +146,6 @@ die()
 sucess()
 {
 	msg "\e[1;32m[*] ${*}\e[m"
-
-	return "$_ckx_true"
 }
 
 warn()
@@ -254,9 +254,9 @@ display_help()
 	msg "Utilize: ckx [OPÇÃO]"
 	msg "CryptoKnightX é um encriptador de arquivos ocultos."
 	msg ""
-	msg "  -h, --help                 mostra esta mensagem e termina."
-	msg "  -v, --version              mostra a versão do software e termina."
-	msg "  -l, --license              mostra a licença do software e termina."
+	msg "  -h, --help                 exibe esta mensagem."
+	msg "  -v, --version              exibe a versão do software."
+	msg "  -l, --license              exibe a licença do software."
 	msg "  -s, --start                inicia o software."
 	msg "  -gpgconf, --enc-config     opção para configurar a criptografia no"
 	msg "                              modo questionário."
@@ -538,6 +538,7 @@ _main_help()
 	msg "REMOVE -> remove permanentemente um diretório (REMOVE 'dir')"
 	msg "LIST   -> lista os diretórios"
 	msg "CLEAR  -> limpa a tela"
+	msg "EXIT   -> sai do software"
 	msg "HELP   -> exibe os comandos"
 }
 
@@ -575,7 +576,7 @@ main()
 
 		case "$__main__" in
 
-		SELECT|SEL|select|sel|CD|cd)
+		SEL*|sel*|CD|cd)
 			if [[ -d "$__main2__" ]]; then
 				break
 			elif [[ -e "$__main2__" ]]; then
@@ -586,7 +587,7 @@ main()
 			fi
 		;;
 
-		CREATE|CR|create|cr)
+		CR*|cr*)
 			if [[ ! -d "$__main2__" ]]; then
 				mkdir "$__main2__" && sucess "${__main2__} -> criado com sucesso"
 				break
@@ -595,7 +596,7 @@ main()
 			fi
 		;;
 
-		REMOVE|RM|remove|rm)
+		REM*|RM|rem*|rm)
 			[[ -e "$__main2__" ]] || [[ -d "$__main2__" ]] || {
 				warn "${__main2__} não foi encontrado..."
 				continue
@@ -644,8 +645,12 @@ main()
 			_main_help
 		;;
 
-		CLEAR|CL|clear|cl)
+		CL*|cl*)
 			clear
+		;;
+
+		EXIT|exit)
+			exit "${_ckx_true}"
 		;;
 
 		*)
