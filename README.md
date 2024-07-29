@@ -22,21 +22,6 @@ objetivo deste software é manter sua privacidade e integridade de seus arquivos
 <a href="https://notabug.org/slackjeff/knight" target="_blank">acesse aqui!</a></p>
 
 
-<!---SUMARIO--->
-
-<!---
-<br>
-<h2 align="center">Sumário</h2>
-<a href="https://github.com/ghostkill73/CryptoKnightX?tab=readme-ov-file#dependências" target="_blank">1. Dependências</a>
-<br>
-<a href="https://github.com/ghostkill73/CryptoKnightX?tab=readme-ov-file#como-instalar" target="_blank">2. Como instalar?</a>
-<br>
-<a href="https://github.com/ghostkill73/CryptoKnightX?tab=readme-ov-file#como-utilizar" target="_blank">3. Como utilizar?</a>
-<br>
-<a href="https://github.com/ghostkill73/CryptoKnightX?tab=readme-ov-file#donate" target="_blank">4. Donate</a>
---->
-
-
 <!---DEPENDENCIAS--->
 
 
@@ -60,23 +45,21 @@ provavelmente dependências mais antigas irão funcionar corretamente.</b>
 <h2 align="center">Como instalar?</h2>
 <p>Acesse a última release ou faça o download usando <code>wget</code>:</p>
 <pre>
-wget https://github.com/ghostkill73/CryptoKnightX/releases/download/0.0.4/ckx-0.0.4.tar.gz
-tar -xvf ckx-0.0.4.tar.gz
+wget https://github.com/ghostkill73/CryptoKnightX/releases/download/0.0.4/ckx-0.0.4.tar.gz && tar -xvf ckx-0.0.4.tar.gz
 </pre>
 
 <br><br>
-<p>caso queira instalar a versão mais recente, utilize o <code>git</code>:</p>
+<p>caso queira instalar a versão mais recente, utilize uma das linhas de comando abaixo:</p>
 
-<pre>
-git clone https://github.com/ghostkill73/CryptoKnightX
+<p><code>git</code>:</p>
+<pre>git clone https://github.com/ghostkill73/CryptoKnightX
 cd CryptoKnightX
-chmod +x ckx
-</pre>
+chmod +x ckx</pre>
 <br>
-<p>usando o <code>wget</code>:</p>
+<p><code>wget</code>:</p>
 <pre><code>wget https://raw.githubusercontent.com/ghostkill73/CryptoKnightX/main/ckx && chmod +x ckx</code></pre>
 <br>
-<p>usando o <code>curl</code>:</p>
+<p><code>curl</code>:</p>
 <pre><code>curl -L https://raw.githubusercontent.com/ghostkill73/CryptoKnightX/main/ckx >> ckx && chmod +x ckx</code></pre>
 <br>
 
@@ -100,9 +83,9 @@ digitada antes.</p>
 
 <h4>Comandos:</h4>
 <pre>
--h, --help                 exibe esta mensagem e termina.
--v, --version              exibe a versão do software e termina.
--l, --license              exibe a licença do software e termina.
+-h, --help                 exibe a mensagem de ajuda.
+-v, --version              exibe a versão do software.
+-l, --license              exibe a licença do software.
 -s, --start                inicia o software.
 -gpgconf, --enc-config     opção para configurar a criptografia no
                            modo questionário.   
@@ -110,10 +93,18 @@ digitada antes.</p>
 
 <h4>configurando o gpg:</h4>
 
-<pre><code>sudo ./ckx -gpgcongf</code></pre>
+<pre><code>sudo ./ckx -gpgconf</code></pre>
 
 <p>Esse comando vai facilitar o processo de configuração da criptografia
 simétrica do gpg.</p>
+
+
+<h2 align="center">to-do</h2>
+
+* [ ] Documentação
+* [x] Múltiplos diretórios
+* [ ] Opção para configurações gerais
+* [ ] Interface mais intuitiva e informativa
 
 
 <!---DONATE--->
