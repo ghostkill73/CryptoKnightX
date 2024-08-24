@@ -164,10 +164,6 @@ warn()
 #
 ########################################################################################
 
-# verificando se o usuário está executando como root.
-# CASO NÃO QUEIRA USAR ROOT COMENTE O COMANDO ABAIXO
-[[ "$EUID" != '0' ]] && { die "Permissão negada: verifique se está executando como root."; }
-
 # verificando gpg
 [[ -n "$(type -P gpg)" ]] || [[ -n "$(type -P gpg2)" ]] || {
 	die "utilitário gpg/gpg2 não instalado."
@@ -574,9 +570,9 @@ main()
 
 		__main2__="${__main2__%/}"
 
-		case "$__main__" in
+		case "${__main__,,}" in
 
-		SEL*|sel*|CD|cd)
+		sel*|cd)
 			if [[ -d "$__main2__" ]]; then
 				break
 			elif [[ -e "$__main2__" ]]; then
@@ -587,7 +583,7 @@ main()
 			fi
 		;;
 
-		CR*|cr*)
+		cr*)
 			if [[ ! -d "$__main2__" ]]; then
 				mkdir "$__main2__" && sucess "${__main2__} -> criado com sucesso"
 				break
@@ -596,7 +592,7 @@ main()
 			fi
 		;;
 
-		REM*|RM|rem*|rm)
+		rem*|rm)
 			[[ -e "$__main2__" ]] || [[ -d "$__main2__" ]] || {
 				warn "${__main2__} não foi encontrado..."
 				continue
@@ -629,7 +625,7 @@ main()
 			esac
 		;;
 
-		LIST|LS|list|ls)
+		lis*|ls)
 			for i in *; {
 				if [[ -d "$i" ]]; then
 					msg "\e[1;31m[+] ${i##*/} (descriptografado)\e[m"
@@ -641,15 +637,15 @@ main()
 			}
 		;;
 
-		HELP|help)
+		h*)
 			_main_help
 		;;
 
-		CL*|cl*)
+		cl*)
 			clear
 		;;
 
-		EXIT|exit)
+		exit)
 			exit "${_ckx_true}"
 		;;
 
