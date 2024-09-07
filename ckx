@@ -124,6 +124,12 @@ declare _ckx_error=2
 
 declare _global_cdpath="$PWD"
 
+# gpgconf padrão
+: ${s2k_mode:=3}
+: ${s2k_count:=65536}
+: ${s2k_digest_algo:=SHA256}
+: ${s2k_cipher_algo:=AES256}
+
 
 ########################################################################################
 #
@@ -187,6 +193,18 @@ warn()
 
 ########################################################################################
 #
+# sources
+#
+########################################################################################
+
+# configurações da criptografia
+source ${_ckx_lib}/gpgconf 2>&-
+
+# arquivos de configuração do usuário
+source ${_ckx_lib}/*.conf 2>&-
+
+########################################################################################
+#
 # informações
 #
 ########################################################################################
@@ -247,34 +265,32 @@ display_help()
 	msg " This is free software, and you are welcome to redistribute it"
 	msg " under certain conditions."
 	msg ""
-	msg "Utilize: ckx [OPÇÃO]"
-	msg "CryptoKnightX é um encriptador de arquivos ocultos."
+	msg " CryptoKnightX é um encriptador de arquivos ocultos."
+	msg ""
+	msg " ckx [OPÇÃO]"
+	msg " ckx --encrypt <file>"
+	msg " ckx --decrypt <file.gpg>"
+	msg ""
 	msg ""
 	msg "  -h, --help                 exibe esta mensagem."
+	msg ""
 	msg "  -v, --version              exibe a versão do software."
+	msg ""
 	msg "  -l, --license              exibe a licença do software."
+	msg ""
 	msg "  -s, --start                inicia o software."
-	msg "  -gpgconf, --enc-config     opção para configurar a criptografia no"
+	msg ""
+	msg "  -E, --encrypt              criptografa um arquivo."
+	msg ""
+	msg "  -D, --decrypt              descriptografa um arquivo."
+	msg ""
+	msg "  --configure-encryption     opção para configurar a criptografia no"
 	msg "                              modo questionário."
 	msg ""
-	msg "contribua: <github.com/ghostkill73/CryptoKnightX>"
+	msg " contribua: <github.com/ghostkill73/CryptoKnightX>"
 
 	exit "$_ckx_true"
 }
-
-
-########################################################################################
-#
-# sources
-#
-########################################################################################
-
-source ${_ckx_lib}/gpgconf 2>&-
-# gpgconf padrão
-: ${s2k_mode:=3}
-: ${s2k_count:=65536}
-: ${s2k_digest_algo:=SHA256}
-: ${s2k_cipher_algo:=AES256}
 
 
 ########################################################################################
@@ -717,7 +733,37 @@ else
 
 		-v|--version) display_version ;;
 
-		--enc-config|-gpgconf) libgpgconf ;;
+		--configure-encryption) libgpgconf ;;
+
+		-E|--encrypt)
+			[[ -d "${2}" ]] && die "não pode criptografar um diretório"
+
+			gpg --no-symkey-cache \
+			--s2k-mode 3 \
+			--s2k-count ${s2k_count} \
+			--s2k-digest-algo ${s2k_digest_algo} \
+			--s2k-cipher-algo ${s2k_cipher_algo} \
+			-c ${2} && \
+			sucess "${2} foi criptografado com sucesso." || \
+			{
+				die "Algum erro ocorreu."
+			}
+
+			exit "${_ckx_true}"
+		;;
+
+		-D|--decrypt)
+			[[ -d "${2}" ]] && die "não pode criptografar um diretório"
+
+			gpg --no-symkey-cache \
+			-d ${2} > ${2%.gpg} && \
+			sucess "${2} foi descriptografado com sucesso." || \
+			{
+				die "Algum erro ocorreu."
+			}
+
+			exit "${_ckx_true}"
+		;;
 
 		*) display_error "$1" ;;
 
