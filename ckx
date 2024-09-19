@@ -203,6 +203,7 @@ source ${_ckx_lib}/gpgconf 2>&-
 # arquivos de configuração do usuário
 source ${_ckx_lib}/*.conf 2>&-
 
+
 ########################################################################################
 #
 # informações
@@ -337,7 +338,7 @@ libgpgconf()
 	read -p 'Digite a opção (padrão = 3): ' _gpgconf_mode
 
 	case "$_gpgconf_mode" in
-	0) :;; 1) :;; 3) :;;
+	0|1|3) :;;
 	*) _gpgconf_mode=3 ;;
 	esac
 	msg ""
@@ -359,13 +360,12 @@ libgpgconf()
 
 		_gpgconf_int=1024
 
-	elif [[ "$_gpgconf_int" =~ [^[0-9]] ]]; then
+	else
 
 		_gpgconf_int=65536
 
-	else
-		:
 	fi
+
 	msg ""
 	warn "s2k-digest-algo=${_gpgconf_int}"
 
@@ -452,7 +452,8 @@ libgpgconf()
 
 	msg ""
 	msg "gpgconf:"
-	msg "$(<"${_ckx_lib}/gpgconf")" && sucess "gpgconf configurado com sucesso"
+	msg "$(<"${_ckx_lib}/gpgconf")" \
+	&& sucess "gpgconf configurado com sucesso"
 
 	exit "$_ckx_true"
 }
@@ -463,87 +464,78 @@ libgpgconf()
 #
 ########################################################################################
 
-_main_encrypt()
+function_main_encrypt()
 {
 	local _enc_opt="$1"
 	local _enc_dir="$2"
 
 	case "$_enc_opt" in
 
-	-d) # descritografando
-		sucess "${_enc_dir} -> iniciando descriptografia"
+	-d) # descriptografando
+		warn "${_enc_dir} -> iniciando descriptografia."
 
 		gpg --quiet -o ${_enc_dir%.gpg} \
 		--no-symkey-cache \
-		-d ${_enc_dir} && sucess "${_enc_dir} -> arquivos descriptografados" || \
-		{
-			die "Algum erro ocorreu."
-		}
+		-d ${_enc_dir} \
+		&& sucess "${_enc_dir} descriptografado." \
+		|| die "Não foi possível criptografar: ${_enc_dir}."
 
-		tar -xf ${_enc_dir%.gpg} && sucess "${_enc_dir%.gpg} -> arquivos descompactados"
+		tar -xf ${_enc_dir%.gpg} \
+		&& sucess "${_enc_dir%.gpg} descompactado." \
+		|| die "Não foi possível compactar: ${_enc_dir} e ${_enc_dir%.gpg}."
 
-		rm -r ${_enc_dir} ${_enc_dir%.gpg} && sucess "cache removido"
+		rm -r ${_enc_dir} ${_enc_dir%.gpg} \
+		&& sucess "${_enc_dir} e ${_enc_dir%.gpg} removidos." \
+		|| die "Não foi possível remover: ${_enc_dir} e ${_enc_dir%.gpg}."
+
+		sucess "${_enc_dir} descriptografado com sucesso."
 	;;
 
 	-e) # criptografando
 		cd "$_ckx_data"
 
-		if [[ -d "$_enc_dir" ]]; then
-			tar -cf ${_enc_dir}.tar ./${_enc_dir}/ && sucess "arquivos compactados"
-
-			if [[ "$s2k_mode" = '3' ]]; then
-				gpg --no-symkey-cache \
-				--s2k-mode ${s2k_mode} \
-				--s2k-count ${s2k_count} \
-				--s2k-digest-algo ${s2k_digest_algo} \
-				--s2k-cipher-algo ${s2k_cipher_algo} \
-				-c ${_enc_dir}.tar || \
-				{
-					die "Algum erro ocorreu."
-				}
-			else
-				gpg --no-symkey-cache \
-				--s2k-mode ${s2k_mode} \
-				--s2k-digest-algo ${s2k_digest_algo} \
-				--s2k-cipher-algo ${s2k_cipher_algo} \
-				-c ${_enc_dir}.tar || \
-				{
-					die "Algum erro ocorreu."
-				}
-			fi
-
-			rm -r ${_enc_dir}.tar ./${_enc_dir}/ && sucess "cache removido"
+		if [[ -d "${_enc_dir}" ]]; then
+			declare _enc_dir_1="${_enc_dir}.tar"
+			declare _enc_dir_2="${_enc_dir}"
 		else
-			tar -cf ${_enc_dir%.gpg} ./${_enc_dir%.tar.gpg}/ && sucess "arquivos compactados"
-
-			if [[ "$s2k_mode" = '3' ]]; then
-				gpg --no-symkey-cache \
-				--s2k-mode ${s2k_mode} \
-				--s2k-count ${s2k_count} \
-				--s2k-digest-algo ${s2k_digest_algo} \
-				--s2k-cipher-algo ${s2k_cipher_algo} \
-				-c ${_enc_dir%.gpg} || \
-				{
-					die "Algum erro ocorreu."
-				}
-			else
-				gpg --no-symkey-cache \
-				--s2k-mode ${s2k_mode} \
-				--s2k-digest-algo ${s2k_digest_algo} \
-				--s2k-cipher-algo ${s2k_cipher_algo} \
-				-c ${_enc_dir%.gpg} || \
-				{
-					die "Algum erro ocorreu."
-				}
-			fi
-			rm -r ${_enc_dir%.gpg} ${_enc_dir%.tar.gpg} && sucess "cache removido"
+			declare _enc_dir_1="${_enc_dir%.gpg}"
+			declare _enc_dir_2="${_enc_dir%.tar.gpg}"
 		fi
+
+		tar -cf ${_enc_dir_1} ${_enc_dir_2} \
+		&& sucess "${_enc_dir_2} compactado." \
+		|| die "Não foi possível compactar: ${_enc_dir_2}."
+
+		if [[ "$s2k_mode" = '3' ]]; then
+			gpg --no-symkey-cache \
+			--s2k-mode ${s2k_mode} \
+			--s2k-count ${s2k_count} \
+			--s2k-digest-algo ${s2k_digest_algo} \
+			--s2k-cipher-algo ${s2k_cipher_algo} \
+			-c ${_enc_dir_1} \
+			&& sucess "${_enc_dir_1} criptografado com ${s2k_cipher_algo}." \
+			|| die "Não foi possível criptografar: ${_enc_dir_1}."
+		else
+			gpg --no-symkey-cache \
+			--s2k-mode ${s2k_mode} \
+			--s2k-digest-algo ${s2k_digest_algo} \
+			--s2k-cipher-algo ${s2k_cipher_algo} \
+			-c ${_enc_dir_1} \
+			&& sucess "${_enc_dir_1} criptografado com ${s2k_cipher_algo}." \
+			|| die "Não foi possível criptografar: ${_enc_dir_1}."
+		fi
+
+		rm -r ${_enc_dir_1} ${_enc_dir_2} \
+		&& sucess "${_enc_dir_1} e ${_enc_dir_2} removidos." \
+		|| die "Não foi possível remover: ${_enc_dir_1} e ${_enc_dir_2}."
+
+		sucess "${_enc_dir} criptografado com sucesso."
 	;;
 
 	esac
 }
 
-_main_help()
+display_main_help()
 {
 	msg "SELECT -> seleciona um diretório              (SELECT 'dir')"
 	msg "CREATE -> cria um novo diretório              (CREATE 'dir')"
@@ -558,19 +550,13 @@ main()
 {
 	local _main_command __main__ __main2__ _main_yorn
 
-	cd "$_ckx_dir"
-
-	[[ -d "$_ckx_data" ]] || {
-		mkdir -p "$_ckx_data" 2>&- && sucess "diretório ${_ckx_data} criado"
-	}
-
 	cd "$_ckx_data"
 
 	msg "diretórios disponíveis:"
 	msg ""
 	for i in *; {
 		if [[ -d "$i" ]]; then
-			msg "\e[1;31m[+] ${i##*/} (descriptografado)\e[m"
+			msg "\e[1;31m[!] ${i##*/} (descriptografado)\e[m"
 		elif [[ -e "$i" ]]; then
 			msg "\e[1;32m[+] ${i##*/}\e[m"
 		else
@@ -579,7 +565,7 @@ main()
 	}
 	msg ""
 
-	_main_help
+	display_main_help
 
 	while :; do
 		read -ep 'ckx> ' __main__ __main2__
@@ -592,7 +578,7 @@ main()
 			if [[ -d "$__main2__" ]]; then
 				break
 			elif [[ -e "$__main2__" ]]; then
-				_main_encrypt -d "$__main2__"
+				function_main_encrypt -d "$__main2__"
 				break
 			else
 				warn "${__main2__} não encontrado... digite novamente"
@@ -601,7 +587,9 @@ main()
 
 		cr*)
 			if [[ ! -d "$__main2__" ]]; then
-				mkdir "$__main2__" && sucess "${__main2__} -> criado com sucesso"
+				mkdir "$__main2__" \
+				&& sucess "${__main2__} -> criado com sucesso." \
+				|| die "não foi possível criar: ${__main2__}."
 				break
 			else
 				warn "${__main2__} já existe"
@@ -617,7 +605,6 @@ main()
 			warn "você deseja remover ${__main2__}? (yes/N*)"
 			read _main_yorn
 
-
 			case "$_main_yorn" in
 				yes)
 					warn "você tem certeza? (yes/N*)"
@@ -625,8 +612,9 @@ main()
 
 					case "$_main_yorn" in
 						yes)
-							rm -rf "$__main2__" && \
-							sucess "${__main2__} removido com sucesso"
+							rm -rf "$__main2__" \
+							&& sucess "${__main2__} removido com sucesso." \
+							|| die "Não foi possível remover: ${__main2__}."
 						;;
 
 						*)
@@ -654,7 +642,7 @@ main()
 		;;
 
 		h*)
-			_main_help
+			display_main_help
 		;;
 
 		cl*)
@@ -697,7 +685,7 @@ main()
 		exit|quit)
 			trap ' ' SIGINT SIGQUIT
 
-			_main_encrypt -e "$__main2__" && sucess "arquivos criptografados"
+			function_main_encrypt -e "$__main2__"
 
 			cd "$_global_cdpath"
 
@@ -736,18 +724,16 @@ else
 		--configure-encryption) libgpgconf ;;
 
 		-E|--encrypt)
-			[[ -d "${2}" ]] && die "não pode criptografar um diretório"
+			[[ -d "${2}" ]] && die "Não pode criptografar um diretório."
 
 			gpg --no-symkey-cache \
 			--s2k-mode 3 \
 			--s2k-count ${s2k_count} \
 			--s2k-digest-algo ${s2k_digest_algo} \
 			--s2k-cipher-algo ${s2k_cipher_algo} \
-			-c ${2} && \
-			sucess "${2} foi criptografado com sucesso." || \
-			{
-				die "Algum erro ocorreu."
-			}
+			-c ${2} \
+			&& sucess "${2} foi criptografado com sucesso." \
+			|| die "Não foi possível criptografar: ${2}."
 
 			exit "${_ckx_true}"
 		;;
@@ -756,11 +742,9 @@ else
 			[[ -d "${2}" ]] && die "não pode criptografar um diretório"
 
 			gpg --no-symkey-cache \
-			-d ${2} > ${2%.gpg} && \
-			sucess "${2} foi descriptografado com sucesso." || \
-			{
-				die "Algum erro ocorreu."
-			}
+			-d ${2} > ${2%.gpg} \
+			&& sucess "${2} foi descriptografado com sucesso." \
+			|| die "Não foi possível descriptografar: ${2}."
 
 			exit "${_ckx_true}"
 		;;
