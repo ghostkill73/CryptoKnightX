@@ -129,6 +129,10 @@ declare _global_cdpath="$PWD"
 : ${s2k_count:=65536}
 : ${s2k_digest_algo:=SHA256}
 : ${s2k_cipher_algo:=AES256}
+[[ "${_gpgconf_use_symkey:=true}" = 'true' ]] || {
+	: ${_gpgconf_recipient?"o email chave privada não está definido, utilize 'ckx --configure-encryption'."}
+}
+: ${_gpgconf_recipient:=none}
 
 
 ########################################################################################
@@ -303,29 +307,38 @@ display_help()
 
 libgpgconf()
 {
-	local _gpgconf_yorn _gpgconf_mode _gpgconf_int _gpgconf_hash _gpgconf_cipher
+	local _gpgconf_yorn \
+	_gpgconf_mode \
+	_gpgconf_int \
+	_gpgconf_hash \
+	_gpgconf_cipher \
+	_gpgconf_symkey \
+	_gpgconf_line \
+	_gpgconf_email="none" \
+	_gpgconf_secret_keys
 
 	msg "${_ckx_software_name} ${_ckx_version}"
-	msg "modo configuração de criptografia"
+	msg "Configuração de criptografia do software"
 	msg ""
-	msg "configurar a biblioteca de variáveis -> gpgconf"
 	msg "definições atuais do gpgconf:"
 	msg ""
-	msg " s2k-mode        = ${s2k_mode}"
-	msg " s2k-count       = ${s2k_count}"
-	msg " s2k-digest-algo = ${s2k_digest_algo}"
-	msg " s2k-cipher-algo = ${s2k_cipher_algo}"
+	msg " s2k-mode                   = ${s2k_mode}"
+	msg " s2k-count                  = ${s2k_count}"
+	msg " s2k-digest-algo            = ${s2k_digest_algo}"
+	msg " s2k-cipher-algo            = ${s2k_cipher_algo}"
+	msg " use symmetric cryptography = ${_gpgconf_use_symkey}"
+	msg " private key email          = ${_gpgconf_recipient}"
 	msg ""
 
-	read -p 'Deseja prosseguir com a configuração? (y/N) ' _gpgconf_yorn
+	read -p 'Deseja prosseguir com a configuração? (y/N): ' _gpgconf_yorn
 
-	case "$_gpgconf_yorn" in
-	[yY]*) :;;
-	[nN]*)
+	case "${_gpgconf_yorn,,}" in
+	y*) :;;
+	n*)
 		warn "operação cancelada"
 		exit "$_ckx_true"
 	;;
-	*) die "opção inválida." ;;
+	*) die "Opção inválida." ;;
 	esac
 
 	msg ""
@@ -373,7 +386,7 @@ libgpgconf()
 	msg "[s2k-digest-algo] função hash"
 	msg "define qual a função hash que será utilizada nas senhas."
 	msg " 1) SHA1"
-	msg " 2) RIPEMD160 "
+	msg " 2) RIPEMD160"
 	msg " 3) SHA224"
 	msg " 4) SHA256"
 	msg " 5) SHA384"
@@ -382,14 +395,14 @@ libgpgconf()
 
 	read -p "Digite o NÚMERO da opção (padrão = SHA256): " _gpgconf_hash
 
-	case "$_gpgconf_hash" in
-	1|sha1*|SHA1*)   _gpgconf_hash=SHA1      ;;
-	2|rip*|RIP*)     _gpgconf_hash=RIPEMD160 ;;
-	3|sha22*|SHA22*) _gpgconf_hash=SHA224    ;;
-	4|sha25*|SHA25*) _gpgconf_hash=SHA256    ;;
-	5|sha3*|SHA3*)   _gpgconf_hash=SHA384    ;;
-	6|sha5*|SHA5*)   _gpgconf_hash=SHA512    ;;
-	*)               _gpgconf_hash=SHA256    ;;
+	case "${_gpgconf_hash,,}" in
+	1|sha1*)   _gpgconf_hash=SHA1      ;;
+	2|rip*)    _gpgconf_hash=RIPEMD160 ;;
+	3|sha22*)  _gpgconf_hash=SHA224    ;;
+	4|sha25*)  _gpgconf_hash=SHA256    ;;
+	5|sha3*)   _gpgconf_hash=SHA384    ;;
+	6|sha5*)   _gpgconf_hash=SHA512    ;;
+	*)         _gpgconf_hash=SHA256    ;;
 	esac
 	msg ""
 	warn "s2k-digest-algo=${_gpgconf_hash}"
@@ -414,32 +427,94 @@ libgpgconf()
 
 	read -p "Digite o NÚMERO da opção (padrão = AES256): " _gpgconf_cipher
 
-	case "$_gpgconf_cipher" in
-	1|ide*|IDE*)                _gpgconf_cipher=IDEA        ;;
-	2|3des|3DES)                _gpgconf_cipher=3DES        ;;
-	3|cast5|CAST5)              _gpgconf_cipher=CAST5       ;;
-	4|blow*|BLOW*)              _gpgconf_cipher=BLOWFISH    ;;
-	5|aes|AES)                  _gpgconf_cipher=AES         ;;
-	6|aes1*|AES1*)              _gpgconf_cipher=AES192      ;;
-	7|aes2*|AES2*)              _gpgconf_cipher=AES256      ;;
-	8|two*|TWO*)                _gpgconf_cipher=TWOFISH     ;;
-	9|camellia12*|CAMELLIA12*)  _gpgconf_cipher=CAMELLIA128 ;;
-	10|camellia19*|CAMELLIA19*) _gpgconf_cipher=CAMELLIA192 ;;
-	11|camellia2*|CAMELLIA2*)   _gpgconf_cipher=CAMELLIA256 ;;
-	*)                          _gpgconf_cipher=AES256      ;;
+	case "${_gpgconf_cipher,,}" in
+	1|ide*)         _gpgconf_cipher=IDEA        ;;
+	2|3des)         _gpgconf_cipher=3DES        ;;
+	3|cast5)        _gpgconf_cipher=CAST5       ;;
+	4|blow*)        _gpgconf_cipher=BLOWFISH    ;;
+	5|aes)          _gpgconf_cipher=AES         ;;
+	6|aes1*)        _gpgconf_cipher=AES192      ;;
+	7|aes2*)        _gpgconf_cipher=AES256      ;;
+	8|two*)         _gpgconf_cipher=TWOFISH     ;;
+	9|camellia12*)  _gpgconf_cipher=CAMELLIA128 ;;
+	10|camellia19*) _gpgconf_cipher=CAMELLIA192 ;;
+	11|camellia2*)  _gpgconf_cipher=CAMELLIA256 ;;
+	*)              _gpgconf_cipher=AES256      ;;
 	esac
 	msg ""
 	warn "s2k-cipher-algo=${_gpgconf_cipher}"
 
 	msg ""
+	msg "[_gpgconf_use_symkey] Criptografia simétrica/assimétrica"
+	msg "define se o CKX irá utilizar uma senha ou uma chave privada"
+	msg "do seu chaveiro gpg para criptografar os arquivos."
+	msg " 1) True  (Utilizar senha)"
+	msg " 2) False (Utilizar chave privada)"
+	msg "Ao utilizar uma chave privada, você precisará digitar a senha apenas"
+	msg "ao descritografar o diretório."
+	msg "Para gerar uma chave você deve utilizar o comando 'gpg --full-generate-key'."
+
+	read -p "Digite o NÚMERO da opção (padrão = True): " _gpgconf_symkey
+
+	case "${_gpgconf_symkey,,}" in
+	1|true)  _gpgconf_symkey=true  ;;
+	2|false) _gpgconf_symkey=false ;;
+	*)       _gpgconf_symkey=true  ;;
+	esac
+	msg ""
+	warn "_gpgconf_use_symkey=${_gpgconf_symkey}"
+
+	[[ "$_gpgconf_symkey" = 'true' ]] || {
+		msg ""
+		msg "[_gpgconf_recipient] Email da chave privada"
+		msg "define qual chave privada será utilizada."
+
+		read -p "Deseja listar suas chaves privadas? (y/N): " _gpgconf_yorn
+
+		case "${_gpgconf_yorn,,}" in
+		y*)
+			_gpgconf_secret_keys=$(
+				while IFS= read -r _gpgconf_line; do
+					[[ "$_gpgconf_line" =~ '@' ]] && msg "$_gpgconf_line"
+				done < <(gpg --list-secret-keys)
+			)
+
+			if [[ -n "$_gpgconf_secret_keys" ]]; then
+				msg "$_gpgconf_secret_keys"
+			else
+				warn "Nenhuma chave foi encontrada."
+			 	warn "Utilize o comando 'gpg --full-generate-key' para gerar uma chave."
+				exit "$_ckx_false"
+			fi
+		;;
+		*) :;;
+		esac
+
+		read -p "Digite o email de sua chave privada: " _gpgconf_email
+	}
+
+	msg ""
 	msg "resultado:"
-	msg " s2k-mode        = ${_gpgconf_mode}"
-	msg " s2k-count       = ${_gpgconf_int}"
-	msg " s2k-digest-algo = ${_gpgconf_hash}"
-	msg " s2k-cipher-algo = ${_gpgconf_cipher}"
+	msg " s2k-mode            = ${_gpgconf_mode}"
+	msg " s2k-count           = ${_gpgconf_int}"
+	msg " s2k-digest-algo     = ${_gpgconf_hash}"
+	msg " s2k-cipher-algo     = ${_gpgconf_cipher}"
+	msg " _gpgconf_use_symkey = ${_gpgconf_symkey}"
+	msg " _gpgconf_recipient  = ${_gpgconf_email}"
 	msg ""
 
-	[[ -e "$_ckx_lib" ]] || {
+	read -p "Confirma? (y/N): " _gpgconf_yorn
+
+	case "${_gpgconf_yorn,,}" in
+	y*) :;;
+	n*)
+		warn "operação cancelada"
+		exit "$_ckx_true"
+	;;
+	*) die "Opção inválida." ;;
+	esac
+
+	[[ -d "$_ckx_lib" ]] || {
 		mkdir "$_ckx_lib" 2>&-
 		:>${_ckx_lib}/gpgconf
 	} && warn "${_ckx_lib}/gpgconf criado"
@@ -449,6 +524,8 @@ libgpgconf()
 	msg "declare s2k_count=${_gpgconf_int}">>${_ckx_lib}/gpgconf
 	msg "declare s2k_digest_algo=${_gpgconf_hash}">>${_ckx_lib}/gpgconf
 	msg "declare s2k_cipher_algo=${_gpgconf_cipher}">>${_ckx_lib}/gpgconf
+	msg "declare _gpgconf_use_symkey=${_gpgconf_symkey}">>${_ckx_lib}/gpgconf
+	msg "declare _gpgconf_recipient=${_gpgconf_email}">>${_ckx_lib}/gpgconf
 
 	msg ""
 	msg "gpgconf:"
@@ -474,11 +551,21 @@ function_main_encrypt()
 	-d) # descriptografando
 		warn "${_enc_dir} -> iniciando descriptografia."
 
-		gpg --quiet -o ${_enc_dir%.gpg} \
-		--no-symkey-cache \
-		-d ${_enc_dir} \
-		&& sucess "${_enc_dir} descriptografado." \
-		|| die "Não foi possível criptografar: ${_enc_dir}."
+		if [[ "$_gpgconf_use_symkey" = 'true' ]]; then
+			gpg --quiet -o ${_enc_dir%.gpg} \
+			--no-symkey-cache \
+			-d ${_enc_dir} \
+			&& sucess "${_enc_dir} descriptografado." \
+			|| die "Não foi possível descriptografar: ${_enc_dir}."
+		else
+			gpg --quiet \
+			-o ${_enc_dir%.gpg} \
+			-d \
+			--recipient ${_gpgconf_recipient} \
+			${_enc_dir} \
+			&& sucess "${_enc_dir} descriptografado." \
+			|| die "Não foi possível descriptografar: ${_enc_dir}."
+		fi
 
 		tar -xf ${_enc_dir%.gpg} \
 		&& sucess "${_enc_dir%.gpg} descompactado." \
@@ -506,22 +593,31 @@ function_main_encrypt()
 		&& sucess "${_enc_dir_2} compactado." \
 		|| die "Não foi possível compactar: ${_enc_dir_2}."
 
-		if [[ "$s2k_mode" = '3' ]]; then
-			gpg --no-symkey-cache \
-			--s2k-mode ${s2k_mode} \
-			--s2k-count ${s2k_count} \
-			--s2k-digest-algo ${s2k_digest_algo} \
-			--s2k-cipher-algo ${s2k_cipher_algo} \
-			-c ${_enc_dir_1} \
-			&& sucess "${_enc_dir_1} criptografado com ${s2k_cipher_algo}." \
-			|| die "Não foi possível criptografar: ${_enc_dir_1}."
+		if [[ "$_gpgconf_use_symkey" = 'true' ]]; then
+			if [[ "$s2k_mode" = '3' ]]; then
+				gpg --no-symkey-cache \
+				--s2k-mode ${s2k_mode} \
+				--s2k-count ${s2k_count} \
+				--s2k-digest-algo ${s2k_digest_algo} \
+				--s2k-cipher-algo ${s2k_cipher_algo} \
+				-c ${_enc_dir_1} \
+				&& sucess "${_enc_dir_1} criptografado com ${s2k_cipher_algo}." \
+				|| die "Não foi possível criptografar: ${_enc_dir_1}."
+			else
+				gpg --no-symkey-cache \
+				--s2k-mode ${s2k_mode} \
+				--s2k-digest-algo ${s2k_digest_algo} \
+				--s2k-cipher-algo ${s2k_cipher_algo} \
+				-c ${_enc_dir_1} \
+				&& sucess "${_enc_dir_1} criptografado com ${s2k_cipher_algo}." \
+				|| die "Não foi possível criptografar: ${_enc_dir_1}."
+			fi
 		else
-			gpg --no-symkey-cache \
-			--s2k-mode ${s2k_mode} \
-			--s2k-digest-algo ${s2k_digest_algo} \
-			--s2k-cipher-algo ${s2k_cipher_algo} \
-			-c ${_enc_dir_1} \
-			&& sucess "${_enc_dir_1} criptografado com ${s2k_cipher_algo}." \
+			gpg --encrypt \
+			-o ${_enc_dir_1}.gpg \
+			--recipient ${_gpgconf_recipient} \
+			${_enc_dir_1} \
+			&& sucess "${_enc_dir_1} criptografado com sua chave privada." \
 			|| die "Não foi possível criptografar: ${_enc_dir_1}."
 		fi
 
@@ -537,13 +633,13 @@ function_main_encrypt()
 
 display_main_help()
 {
-	msg "SELECT -> seleciona um diretório              (SELECT 'dir')"
-	msg "CREATE -> cria um novo diretório              (CREATE 'dir')"
-	msg "REMOVE -> remove permanentemente um diretório (REMOVE 'dir')"
+	msg "SELECT -> seleciona um diretório (SELECT 'dir')"
+	msg "CREATE -> cria um novo diretório (CREATE 'dir')"
+	msg "REMOVE -> remove um diretório    (REMOVE 'dir')"
 	msg "LIST   -> lista os diretórios"
 	msg "CLEAR  -> limpa a tela"
-	msg "EXIT   -> sai do software"
 	msg "HELP   -> exibe os comandos"
+	msg "EXIT   -> sai do software"
 }
 
 main()
@@ -568,7 +664,7 @@ main()
 	display_main_help
 
 	while :; do
-		read -ep 'ckx> ' __main__ __main2__
+		read -ep 'ckx-database > ' __main__ __main2__
 
 		__main2__="${__main2__%/}"
 
@@ -739,7 +835,7 @@ else
 		;;
 
 		-D|--decrypt)
-			[[ -d "${2}" ]] && die "não pode criptografar um diretório"
+			[[ -d "${2}" ]] && die "não pode descriptografar um diretório"
 
 			gpg --no-symkey-cache \
 			-d ${2} > ${2%.gpg} \
