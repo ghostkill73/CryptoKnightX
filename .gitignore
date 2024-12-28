@@ -1,0 +1,9 @@
+# dirs
+test/
+scripts/
+
+# files
+*.bkp
+*.backup
+*~
+*.tmp
