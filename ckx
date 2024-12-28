@@ -3,7 +3,7 @@
 # autor  : Abner Benedito
 # github : ghostkill73
 #
-declare _ckx_version="v0.0.5-dev"
+declare _ckx_version="v0.0.5"
 #
 # licença: GPLv3+
 #----------------------------------------------------------------------------------+
@@ -123,14 +123,14 @@ declare _ckx_error=2
 declare _global_cdpath="$PWD"
 
 # gpgconf padrão
-: ${s2k_mode:=3}
-: ${s2k_count:=65536}
-: ${s2k_digest_algo:=SHA256}
-: ${s2k_cipher_algo:=AES256}
+: "${s2k_mode:=3}"
+: "${s2k_count:=65536}"
+: "${s2k_digest_algo:=SHA256}"
+: "${s2k_cipher_algo:=AES256}"
 [[ "${_gpgconf_use_symkey:=true}" = 'true' ]] || {
-	: ${_gpgconf_recipient?"o email chave privada não está definido, utilize 'ckx --configure-encryption'."}
+	: "${_gpgconf_recipient?"o email chave privada não está definido, utilize 'ckx --configure-encryption'."}"
 }
-: ${_gpgconf_recipient:=none}
+: "${_gpgconf_recipient:=none}"
 
 
 ########################################################################################
@@ -183,13 +183,15 @@ warn()
 }
 
 # verificando se $HOME está definido.
-: ${HOME?"a variável HOME não está definida."}
+: "${HOME?"a variável HOME não está definida."}"
 
 # verificando se $HOME/.ckx existe, caso contrário cria o diretório.
 [[ -d "$_ckx_dir" ]] || {
-	mkdir -p "$_ckx_dir" 2>&-
-	mkdir -p "$_ckx_lib" 2>&-
-	mkdir -p "$_ckx_data" 2>&-
+	(
+		mkdir -p "$_ckx_dir"
+		mkdir -p "$_ckx_lib"
+		mkdir -p "$_ckx_data"
+	) 2>&-
 }
 
 
@@ -200,10 +202,10 @@ warn()
 ########################################################################################
 
 # configurações da criptografia
-source ${_ckx_lib}/gpgconf 2>&-
+source "${_ckx_lib}"/gpgconf 2>&-
 
 # arquivos de configuração do usuário
-source ${_ckx_lib}/*.conf 2>&-
+source "${_ckx_lib}"/*.conf 2>&-
 
 
 ########################################################################################
@@ -510,16 +512,18 @@ libgpgconf()
 
 	[[ -d "$_ckx_lib" ]] || {
 		mkdir "$_ckx_lib" 2>&-
-		:>${_ckx_lib}/gpgconf
+		:>"${_ckx_lib}"/gpgconf
 	} && warn "${_ckx_lib}/gpgconf criado"
 
-	msg "# https://www.gnupg.org/documentation/manpage.html">${_ckx_lib}/gpgconf
-	msg "declare s2k_mode=${_gpgconf_mode}">>${_ckx_lib}/gpgconf
-	msg "declare s2k_count=${_gpgconf_int}">>${_ckx_lib}/gpgconf
-	msg "declare s2k_digest_algo=${_gpgconf_hash}">>${_ckx_lib}/gpgconf
-	msg "declare s2k_cipher_algo=${_gpgconf_cipher}">>${_ckx_lib}/gpgconf
-	msg "declare _gpgconf_use_symkey=${_gpgconf_symkey}">>${_ckx_lib}/gpgconf
-	msg "declare _gpgconf_recipient=${_gpgconf_email}">>${_ckx_lib}/gpgconf
+	(
+		msg "# https://www.gnupg.org/documentation/manpage.html"
+		msg "declare s2k_mode=${_gpgconf_mode}"
+		msg "declare s2k_count=${_gpgconf_int}"
+		msg "declare s2k_digest_algo=${_gpgconf_hash}"
+		msg "declare s2k_cipher_algo=${_gpgconf_cipher}"
+		msg "declare _gpgconf_use_symkey=${_gpgconf_symkey}"
+		msg "declare _gpgconf_recipient=${_gpgconf_email}"
+	) > "${_ckx_lib}"/gpgconf
 
 	msg ""
 	msg "gpgconf:"
@@ -546,26 +550,26 @@ function_main_encrypt()
 		warn "${_enc_dir} -> iniciando descriptografia."
 
 		if [[ "$_gpgconf_use_symkey" = 'true' ]]; then
-			gpg --quiet -o ${_enc_dir%.gpg} \
+			gpg --quiet -o "${_enc_dir%.gpg}" \
 			--no-symkey-cache \
-			-d ${_enc_dir} \
+			-d "${_enc_dir}" \
 			&& sucess "${_enc_dir} descriptografado." \
 			|| die "Não foi possível descriptografar: ${_enc_dir}."
 		else
 			gpg --quiet \
-			-o ${_enc_dir%.gpg} \
+			-o "${_enc_dir%.gpg}" \
 			-d \
-			--recipient ${_gpgconf_recipient} \
-			${_enc_dir} \
+			--recipient "${_gpgconf_recipient}" \
+			"${_enc_dir}" \
 			&& sucess "${_enc_dir} descriptografado." \
 			|| die "Não foi possível descriptografar: ${_enc_dir}."
 		fi
 
-		tar -xf ${_enc_dir%.gpg} \
+		tar -xf "${_enc_dir%.gpg}" \
 		&& sucess "${_enc_dir%.gpg} descompactado." \
 		|| die "Não foi possível compactar: ${_enc_dir} e ${_enc_dir%.gpg}."
 
-		rm -r ${_enc_dir} ${_enc_dir%.gpg} \
+		rm -r "${_enc_dir}" "${_enc_dir%.gpg}" \
 		&& sucess "${_enc_dir} e ${_enc_dir%.gpg} removidos." \
 		|| die "Não foi possível remover: ${_enc_dir} e ${_enc_dir%.gpg}."
 
@@ -583,39 +587,39 @@ function_main_encrypt()
 			declare _enc_dir_2="${_enc_dir%.tar.gpg}"
 		fi
 
-		tar -cf ${_enc_dir_1} ${_enc_dir_2} \
+		tar -cf "${_enc_dir_1}" "${_enc_dir_2}" \
 		&& sucess "${_enc_dir_2} compactado." \
 		|| die "Não foi possível compactar: ${_enc_dir_2}."
 
 		if [[ "$_gpgconf_use_symkey" = 'true' ]]; then
 			if [[ "$s2k_mode" = '3' ]]; then
 				gpg --no-symkey-cache \
-				--s2k-mode ${s2k_mode} \
-				--s2k-count ${s2k_count} \
-				--s2k-digest-algo ${s2k_digest_algo} \
-				--s2k-cipher-algo ${s2k_cipher_algo} \
-				-c ${_enc_dir_1} \
+				--s2k-mode "${s2k_mode}" \
+				--s2k-count "${s2k_count}" \
+				--s2k-digest-algo "${s2k_digest_algo}" \
+				--s2k-cipher-algo "${s2k_cipher_algo}" \
+				-c "${_enc_dir_1}" \
 				&& sucess "${_enc_dir_1} criptografado com ${s2k_cipher_algo}." \
 				|| die "Não foi possível criptografar: ${_enc_dir_1}."
 			else
 				gpg --no-symkey-cache \
-				--s2k-mode ${s2k_mode} \
-				--s2k-digest-algo ${s2k_digest_algo} \
-				--s2k-cipher-algo ${s2k_cipher_algo} \
-				-c ${_enc_dir_1} \
+				--s2k-mode "${s2k_mode}" \
+				--s2k-digest-algo "${s2k_digest_algo}" \
+				--s2k-cipher-algo "${s2k_cipher_algo}" \
+				-c "${_enc_dir_1}" \
 				&& sucess "${_enc_dir_1} criptografado com ${s2k_cipher_algo}." \
 				|| die "Não foi possível criptografar: ${_enc_dir_1}."
 			fi
 		else
 			gpg --encrypt \
-			-o ${_enc_dir_1}.gpg \
-			--recipient ${_gpgconf_recipient} \
-			${_enc_dir_1} \
+			-o "${_enc_dir_1}.gpg" \
+			--recipient "${_gpgconf_recipient}" \
+			"${_enc_dir_1}" \
 			&& sucess "${_enc_dir_1} criptografado com sua chave privada." \
 			|| die "Não foi possível criptografar: ${_enc_dir_1}."
 		fi
 
-		rm -r ${_enc_dir_1} ${_enc_dir_2} \
+		rm -r "${_enc_dir_1}" "${_enc_dir_2}" \
 		&& sucess "${_enc_dir_1} e ${_enc_dir_2} removidos." \
 		|| die "Não foi possível remover: ${_enc_dir_1} e ${_enc_dir_2}."
 
@@ -768,7 +772,7 @@ main()
 	msg "\e[m"
 
 	while :; do
-		read -ep $'\e[1;31m<ckx>\e[m ' _main_command
+		read -rep $'\e[1;31m<ckx>\e[m ' _main_command
 
 		case "$_main_command" in
 
@@ -818,10 +822,10 @@ else
 
 			gpg --no-symkey-cache \
 			--s2k-mode 3 \
-			--s2k-count ${s2k_count} \
-			--s2k-digest-algo ${s2k_digest_algo} \
-			--s2k-cipher-algo ${s2k_cipher_algo} \
-			-c ${2} \
+			--s2k-count "${s2k_count}" \
+			--s2k-digest-algo "${s2k_digest_algo}" \
+			--s2k-cipher-algo "${s2k_cipher_algo}" \
+			-c "${2}" \
 			&& sucess "${2} foi criptografado com sucesso." \
 			|| die "Não foi possível criptografar: ${2}."
 
@@ -832,7 +836,7 @@ else
 			[[ -d "${2}" ]] && die "não pode descriptografar um diretório"
 
 			gpg --no-symkey-cache \
-			-d ${2} > ${2%.gpg} \
+			-d "${2}" > "${2%.gpg}" \
 			&& sucess "${2} foi descriptografado com sucesso." \
 			|| die "Não foi possível descriptografar: ${2}."
 
