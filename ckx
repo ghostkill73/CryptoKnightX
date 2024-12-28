@@ -111,8 +111,6 @@ declare _ckx_version="v0.0.5-dev"
 #
 ########################################################################################
 
-set -u
-
 declare _ckx_software_name="CryptoKnightX"
 declare _ckx_dir="$HOME/.ckx"
 declare _ckx_lib="${_ckx_dir}/lib"
@@ -365,18 +363,14 @@ libgpgconf()
 
 	read -p 'Digite a quantia (padrão = 65536): ' _gpgconf_int
 
-	if [[ "$_gpgconf_int" -gt '65011712' ]]; then
+	if [[ -z "${_gpgconf_int//[0-9]}" ]]; then
+		[[ "$_gpgconf_int" -gt '65011712' ]] && \
+			declare _gpgconf_int=65011712
 
-		_gpgconf_int=65011712
-
-	elif [[ "$_gpgconf_int" -lt '1024' ]]; then
-
-		_gpgconf_int=1024
-
+		[[ "$_gpgconf_int" -lt '1024' ]] && \
+			declare _gpgconf_int=1024
 	else
-
-		_gpgconf_int=65536
-
+		die "O valor fornecido deve ser um inteiro de 1024 até 65011712." 
 	fi
 
 	msg ""
@@ -418,7 +412,7 @@ libgpgconf()
 	msg " 6)  AES192"
 	msg " 7)  AES256"
 	msg " 8)  TWOFISH"
-       	msg " 9)  CAMELLIA128"
+	msg " 9)  CAMELLIA128"
 	msg " 10) CAMELLIA192"
 	msg " 11) CAMELLIA256"
 	msg "recomenda-se utilizar AES256, CARAMELLIA256 ou TWOFISH"
