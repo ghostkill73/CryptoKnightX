@@ -601,6 +601,7 @@ ckxdb_encrypt()
 			if [[ "$_gpgconf_use_symkey" = 'true' ]]; then
 				if [[ "$s2k_mode" = '3' ]]; then
 					gpg --no-symkey-cache \
+						--compress-algo 0 \
 						--s2k-mode "${s2k_mode}" \
 						--s2k-count "${s2k_count}" \
 						--s2k-digest-algo "${s2k_digest_algo}" \
@@ -610,6 +611,7 @@ ckxdb_encrypt()
 						|| die "Não foi possível criptografar: ${_enc_dir_1}."
 				else
 					gpg --no-symkey-cache \
+						--compress-algo 0 \
 						--s2k-mode "${s2k_mode}" \
 						--s2k-digest-algo "${s2k_digest_algo}" \
 						--s2k-cipher-algo "${s2k_cipher_algo}" \
@@ -743,6 +745,7 @@ ckx_encrypt()
 	[[ -e "$file" ]] || die "arquivo não encontrado: $file"
 
 	if gpg --no-symkey-cache \
+		--compress-algo 0 \
 		--s2k-mode 3 \
 		--s2k-count "$s2k_count" \
 		--s2k-digest-algo "$s2k_digest_algo" \
