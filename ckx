@@ -3,8 +3,6 @@
 # autor  : Abner Benedito
 # github : ghostkill73
 #
-declare _ckx_version="v0.0.6"
-#
 # licença: GPLv3+
 #----------------------------------------------------------------------------------+
 #
@@ -13,7 +11,7 @@ declare _ckx_version="v0.0.6"
 # <https://notabug.org/slackjeff/knight>
 #
 #----------------------------------------------------------------------------------+
-# Copyright (C) 2024  Abner Benedito
+# Copyright (C) 2024-2025  Abner Benedito
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,8 +30,7 @@ declare _ckx_version="v0.0.6"
 #
 # O objetivo deste software é manter a segurança e integridade de seus arquivos.
 # O CKX foi feito em sua maior parte em bash script puro, isso significa que ele
-# funcionará corretamenta na maioria das distribuições linux, sem que tenham de
-# depender de muitos pacotes terceiros.
+# funcionará corretamenta na maioria das distribuições Linux/BSD.
 #
 # Dependências fundamentais:
 #	- GNU Tar 1.30+
@@ -89,130 +86,115 @@ declare _ckx_version="v0.0.6"
 #	* Certifique-se de que as modificações estão corretas, livres
 #	de problemas.
 #
+#	Repositório: https://github.com/ghostkill73/CryptoKnightX
+#
 #----------------------------------------------------------------------------------+
 
 ########################################################################################
 #
-# DEBUG
+# Verificando dependências
 #
 ########################################################################################
 
-#set -x
+# Verificando se gpg está instalado
+[[ -n "$(type -P gpg)" ]] || {
+	echo "$0: 'gpg' não está instalado em seu sistema."
+	exit 1
+}
+
+# Verificando se tar está instalado
+[[ -n "$(type -P tar)" ]] || {
+	echo "$0: 'tar' não está instalado em seu sistema."
+	exit 1
+}
 
 ########################################################################################
 #
-# Variáveis globais
+# Variáveis e configurações globais
 #
 ########################################################################################
 
-declare _ckx_software_name="CryptoKnightX"
-declare _ckx_dir="$HOME/.ckx"
-declare _ckx_lib="${_ckx_dir}/lib"
-declare _ckx_data="${_ckx_dir}/data"
+# Verificando se $HOME está definido.
+: "${HOME?"a variável HOME não está definida."}"
 
-declare _ckx_true=0
-declare _ckx_false=1
-declare _ckx_error=2
+declare SOFTWARE_NAME="CryptoKnightX"
+declare SOFTWARE_VERSION="v0.0.6"
 
-# gpg.conf padrão
+declare CKX_DEFAULT_DIR="$HOME/.local/share/ckx"
+declare CKX_CONFIGS_DIR="${CKX_DEFAULT_DIR}/lib"
+declare CKX_DATA_DIR="${CKX_DEFAULT_DIR}/data"
+
+declare -i TRUE=0
+declare -i FALSE=1
+declare -i ERROR=2
+
+# Verificando se $HOME/.ckx existe, caso contrário cria o diretório.
+[[ -d "$CKX_DEFAULT_DIR" ]] || {
+	mkdir -p "$CKX_DEFAULT_DIR"
+	mkdir -p "$CKX_CONFIGS_DIR"
+	mkdir -p "$CKX_DATA_DIR"
+}
+
+########################################################################################
+#
+# GPG Configs
+#
+########################################################################################
+
+source "${CKX_CONFIGS_DIR}"/gpg.conf 2>&-
+
 : "${s2k_mode:=3}"
 : "${s2k_count:=65536}"
 : "${s2k_digest_algo:=SHA256}"
 : "${s2k_cipher_algo:=AES256}"
-[[ "${_gpgconf_use_symkey:=true}" = 'true' ]] ||
-{
-	: "${_gpgconf_recipient?"o email chave privada não está definido, utilize 'ckx --configure-encryption'."}"
+[[ "${_gpgconf_use_symkey:=true}" = true ]] || {
+	[[ -z "${_gpgconf_recipient}" ]] && {
+		echo "A chave privada não foi configurada corretamente."
+		echo "Utilize 'ckx --configure' para escolher a chave privada."
+	}
 }
 : "${_gpgconf_recipient:=none}"
 
 ########################################################################################
 #
-# sources
+# Utils
 #
 ########################################################################################
 
-# configurações da criptografia
-source "${_ckx_lib}"/gpg.conf 2>&-
-
-########################################################################################
-#
-# utilitários para exibir mensagens
-#
-########################################################################################
-
-msg()
-{
-	printf '%b\n' "$*" 2>/dev/null
+msg() {
+	printf '%b\n' "$*" >&2
 }
 
-die()
-{
+die() {
 	msg "\e[1;41m[!] ${*}\e[m"
 
-	exit "$_ckx_error"
+	exit "$ERROR"
 }
 
-sucess()
-{
+sucess() {
 	msg "\e[1;32m[*] ${*}\e[m"
 }
 
-warn()
-{
+warn() {
 	msg "\e[1;33m[#] ${*}\e[m"
 }
 
-
 ########################################################################################
 #
-# pré-verificação
-#
-########################################################################################
-
-# verificando gpg
-[[ -n "$(type -P gpg)" || -n "$(type -P gpg2)" ]] ||
-{
-	die "utilitário gpg/gpg2 não instalado."
-}
-
-# verificando tar
-[[ -n "$(type -P tar)" ]] ||
-{
-	die "utilitário TAR não instalado."
-}
-
-# verificando se $HOME está definido.
-: "${HOME?"a variável HOME não está definida."}"
-
-# verificando se $HOME/.ckx existe, caso contrário cria o diretório.
-[[ -d "$_ckx_dir" ]] ||
-{
-	mkdir -p "$_ckx_dir"
-	mkdir -p "$_ckx_lib"
-	mkdir -p "$_ckx_data"
-}
-
-########################################################################################
-#
-# informações
+# Informações
 #
 ########################################################################################
 
-short_license()
-{
-	msg "${_ckx_software_name} ${_ckx_version}"
-	msg " This program comes with ABSOLUTELY NO WARRANTY"
-	msg " This is free software, and you are welcome to redistribute it"
-	msg " under certain conditions."
-	msg ""
-	msg "Utilize 'ckx --help' para mais detalhes."
-
-	exit "$_ckx_true"
+display_default_message() {
+	msg "$SOFTWARE_NAME $SOFTWARE_VERSION"
+	msg "Copyright (C) 2024-2025 Abner Benedito"
+	msg "License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>"
+	msg "This is free software: you are free to change and redistribute it."
+	msg "There is NO WARRANTY, to the extent permitted by law."
 }
 
-display_license()
-{
-	msg "${_ckx_software_name} ${_ckx_version} Copyright (C) 2024  Abner Benedito"
+display_license() {
+	msg "$SOFTWARE_NAME $SOFTWARE_VERSION Copyright (C) 2024-2025 Abner Benedito"
 	msg ""
 	msg " This program is free software: you can redistribute it and/or modify"
 	msg " it under the terms of the GNU General Public License as published by"
@@ -227,65 +209,56 @@ display_license()
 	msg " You should have received a copy of the GNU General Public License"
 	msg " along with this program.  If not, see <https://www.gnu.org/licenses/>."
 
-	exit "$_ckx_true"
+	exit "$TRUE"
 }
 
+display_version() {
+	msg "${SOFTWARE_NAME} ${SOFTWARE_VERSION}"
 
-display_version()
-{
-	msg "${_ckx_software_name} ${_ckx_version} <github.com/ghostkill73/CryptoKnightX>"
-
-	exit "$_ckx_true"
+	exit "$TRUE"
 }
 
-display_error()
-{
-	msg " A opção '"$1"' não existe"
-	msg " Utilize 'ckx --help' para mais detalhes."
+display_error() {
+	msg "A opção '"$1"' não existe"
+	msg "Utilize 'ckx --help' para mais detalhes."
 
-	exit "$_ckx_false"
+	exit "$FALSE"
 }
 
-display_help()
-{
-	msg "${_ckx_software_name} ${_ckx_version}"
-	msg " This program comes with ABSOLUTELY NO WARRANTY"
-	msg " This is free software, and you are welcome to redistribute it"
-	msg " under certain conditions."
+display_help() {
+	display_default_message
 	msg ""
-	msg " ckx [OPÇÃO]"
-	msg " ckx --encrypt <file>"
-	msg " ckx --decrypt <file.gpg>"
+	msg " Exemplos:"
+	msg "  ckx   (Nenhuma opção)"
+	msg "         Inicia o modo shell interativo."
 	msg ""
-	msg "  -h, --help               exibe esta mensagem."
+	msg "  ckx --encrypt <file>"
+	msg "         Criptografa um arquivo. Será exigido uma senha."
 	msg ""
-	msg "  -v, --version            exibe a versão do software."
+	msg "  ckx --decrypt <file.gpg>"
+	msg "         Descriptografa um arquivo que esteja criptografado com gpg."
 	msg ""
-	msg "  -l, --license            exibe a licença do software."
+	msg " Opções:"
 	msg ""
-	msg "  -s, --start              inicia o software."
+	msg "  -h, --help       Exibe esta mensagem."
+	msg "  -v, --version    Exibe a versão do software."
+	msg "  -l, --license    Exibe a licença do software."
 	msg ""
-	msg "  -E, --encrypt            criptografa um arquivo."
-	msg ""
-	msg "  -D, --decrypt            descriptografa um arquivo."
-	msg ""
-	msg "  --configure-encryption   opção para configurar a criptografia no"
-	msg "                            modo questionário."
-	msg ""
-	msg "contribua: <github.com/ghostkill73/CryptoKnightX>"
+	msg "  -e, --encrypt    Criptografa um arquivo."
+	msg "  -d, --decrypt    Descriptografa um arquivo."
+	msg "  --configure      Opção para configurar a criptografia no"
+	msg "                    modo questionário."
 
-	exit "$_ckx_true"
+	exit "$TRUE"
 }
-
 
 ########################################################################################
 #
-# Configurações
+# Questionário do argumento --configure
 #
 ########################################################################################
 
-config_gpg()
-{
+config_gpg() {
 	local _gpgconf_mode \
 		_gpgconf_int \
 		_gpgconf_hash \
@@ -295,9 +268,9 @@ config_gpg()
 		_gpgconf_email="none" \
 		_gpgconf_secret_keys
 
-	[[ -d "$_ckx_lib" ]] || mkdir "$_ckx_lib"
+	[[ -d "$CKX_CONFIGS_DIR" ]] || mkdir "$CKX_CONFIGS_DIR"
 
-	msg "${_ckx_software_name} ${_ckx_version}"
+	msg "${SOFTWARE_NAME} ${SOFTWARE_VERSION}"
 	msg "Configuração de criptografia do software"
 	msg ""
 	msg "definições atuais do gpgconf:"
@@ -315,7 +288,7 @@ config_gpg()
 		y*) : ;;
 		n*)
 			warn "operação cancelada."
-			exit "$_ckx_true"
+			exit "$TRUE"
 		;;
 		*) die "Opção inválida." ;;
 	esac
@@ -447,7 +420,7 @@ config_gpg()
 				else
 					warn "Nenhuma chave foi encontrada."
 				 	warn "Utilize o comando 'gpg --full-generate-key' para gerar uma chave."
-					exit "$_ckx_false"
+					exit "$FALSE"
 				fi
 			;;
 			*) : ;;
@@ -473,7 +446,7 @@ config_gpg()
 		y*) : ;;
 		n*)
 			warn "operação cancelada"
-			exit "$_ckx_true"
+			exit "$TRUE"
 		;;
 		*) die "Opção inválida." ;;
 	esac
@@ -486,9 +459,9 @@ config_gpg()
 		msg "declare s2k_cipher_algo=${_gpgconf_cipher}"
 		msg "declare _gpgconf_use_symkey=${_gpgconf_symkey}"
 		msg "declare _gpgconf_recipient=${_gpgconf_email}"
-	) > "${_ckx_lib}"/gpg.conf
+	) > "${CKX_CONFIGS_DIR}"/gpg.conf
 
-	exit "$_ckx_true"
+	exit "$TRUE"
 }
 
 ########################################################################################
@@ -497,54 +470,7 @@ config_gpg()
 #
 ########################################################################################
 
-ckxdb_help()
-{
-	msg ""
-	msg "SELECT -> seleciona um diretório (SELECT 'dir')"
-	msg "CREATE -> cria um novo diretório (CREATE 'dir')"
-	msg "REMOVE -> remove um diretório    (REMOVE 'dir')"
-	msg "LIST   -> lista os diretórios"
-	msg "CLEAR  -> limpa a tela"
-	msg "HELP   -> exibe os comandos"
-	msg "EXIT   -> sai do software"
-}
-
-ckxdb_title()
-{
-	msg "\e[1;31m"
-	msg '             ▄▄█▀▀▀█▄█████▀ ▀███▀▀███▀   ▀██▀'
-	msg '           ▄██▀     ▀█ ██   ▄█▀    ███▄  ▄█'
-	msg '           ██▀       ▀ ██ ▄█▀       ▀██▄█▀'
-	msg '           ██          █████▄         ███'
-	msg '           ██▄         ██  ███      ▄█▀▀██▄'
-	msg '           ▀██▄     ▄▀ ██   ▀██▄   ▄█   ▀██▄'
-	msg '             ▀▀█████▀▄████▄   ███▄██▄▄  ▄▄███▄'
-	msg " a soldier's bravery is only recognized on the battlefield"
-	msg "               --||////[CRYPTOKNIGHTX]////>"
-	msg "\e[m"
-}
-
-ckxdb_list()
-{
-	cd "$_ckx_data"
-
-	msg "diretórios disponíveis:"
-	msg ""
-
-	for i in *
-	{
-		if [[ -d "$i" ]]; then
-			msg "\e[1;31m[!] ${i##*/} (descriptografado)\e[m"
-		elif [[ -e "$i" ]]; then
-			msg "\e[1;32m[+] ${i##*/}\e[m"
-		else
-			shift
-		fi
-	}
-}
-
-ckxdb_encrypt()
-{
+ckxdb_encrypt() {
 	local _enc_opt="$1"
 	local _enc_dir="$2"
 
@@ -579,10 +505,10 @@ ckxdb_encrypt()
 				|| die "Não foi possível remover: ${_enc_dir} e ${_enc_dir%.gpg}."
 
 			sucess "${_enc_dir} descriptografado com sucesso."
-		;;
+			;;
 
 		-e) # criptografando
-			cd "$_ckx_data"
+			cd "$CKX_DATA_DIR"
 
 			if [[ -d "${_enc_dir}" ]]; then
 				declare _enc_dir_1="${_enc_dir}.tar"
@@ -633,94 +559,159 @@ ckxdb_encrypt()
 				|| die "Não foi possível remover: ${_enc_dir_1} e ${_enc_dir_2}."
 
 			sucess "${_enc_dir} criptografado com sucesso."
-		;;
+			;;
 	esac
 
 	trap - SIGINT SIGQUIT
 }
 
-ckxdb()
-{
-	local _ckxdb_cmd _ckxdb_arg
+ckxdb_help(){
+	msg "SELECT -> seleciona um diretório (SELECT 'dir')"
+	msg "CREATE -> cria um novo diretório (CREATE 'dir')"
+	msg "REMOVE -> remove um diretório    (REMOVE 'dir')"
+	msg "LIST   -> lista os diretórios"
+	msg "CLEAR  -> limpa a tela"
+	msg "HELP   -> exibe esta lista"
+	msg "EXIT   -> termina o software"
+}
 
-	ckxdb_list
-	ckxdb_help
+ckxdb_list() {
+	local data
 
-	while :; do
-		read -rep "ckx-database > " _ckxdb_cmd _ckxdb_arg
+	for data in "$CKX_DATA_DIR"/*; {
+		if [[ -d "$data" ]]; then
+			msg "\e[1;31m[!] ${data##*/} (descriptografado)\e[m"
+		elif [[ -e "$data" ]]; then
+			msg "\e[1;32m[+] ${data##*/}\e[m"
+		fi
+	}
+}
 
-		_ckxdb_arg="${_ckxdb_arg%/}"
+ckxdb_cd() {
+	local target="$1"
+	declare -g CKXDB_BREAK
 
-		case "${_ckxdb_cmd,,}" in
-			sel*|cd)
-				if [[ -d "$_ckxdb_arg" ]]; then
-					break
-				elif [[ -e "$_ckxdb_arg" ]]; then
-					ckxdb_encrypt -d "$_ckxdb_arg"
-					break
-				else
-					warn "${_ckxdb_arg} não encontrado."
-				fi
-			;;
+	[[ -d "$target" ]] && {
+		CKXDB_BREAK=true
+		return "$TRUE"
+	}
 
-			cr*)
-				if [[ -d "$_ckxdb_arg" || -e "$_ckxdb_arg" ]]; then
-					warn "${_ckxdb_arg} já existe"
-				else
-					mkdir "$_ckxdb_arg" \
-						&& sucess "${_ckxdb_arg} criado com sucesso." \
-						|| die "não foi possível criar: ${_ckxdb_arg}."
-					break
-				fi
-			;;
+	[[ -e "$target" ]] && {
+		ckxdb_encrypt -d "$target"
+		CKXDB_BREAK=true
+		return "$TRUE"
+	}
 
-			rem*|rm)
-				[[ -d "$_ckxdb_arg" || -e "$_ckxdb_arg" ]] ||
-				{
-					warn "${_ckxdb_arg} não foi encontrado..."
-					continue
-				}
+	warn "$target não existe."
+	return "$FALSE"
+}
 
-				read -rp "você deseja remover ${_ckxdb_arg}? (yes/N*) "
-				if [[ "$REPLY" = "yes" ]]; then
-					read -rp "certeza? (yes/N*) "
-					if [[ "$REPLY" = "yes" ]]; then
-						rm -rf "$_ckxdb_arg" \
-							&& sucess "${_ckxdb_arg} removido com sucesso." \
-							|| die "Não foi possível remover: ${_ckxdb_arg}."
-					else
-						warn "operação cancelada"
-					fi
-				else
-					warn "operação cancelada"
-				fi
-			;;
+ckxdb_rm() {
+	local target="$1"
 
-			lis*|ls) ckxdb_list ;;
+	[[ -d "$target" || -e "$target" ]] || {
+		warn "$target não existe."
+		return "$FALSE"
+	}
 
-			h*) ckxdb_help ;;
+	read -rp "Você deseja remover $target? (yes/N*) "
+	if [[ "$REPLY" = yes ]]; then
+		read -rp "Certeza? (yes/N*) "
+		if [[ "$REPLY" = yes ]]; then
+			if rm -rf "$target"; then
+				sucess "$target removido com sucesso."
+				return "$TRUE"
+			else
+				warn "Não foi possível remover $target."
+				return "$FALSE"
+			fi
+		else
+			warn "Operação cancelada."
+			return "$TRUE"
+		fi
+	else
+		warn "Operação cancelada."
+		return "$TRUE"
+	fi
+}
 
-			cl*) clear ;;
+ckxdb_create() {
+	local name="$1"
 
-			exit) exit "$_ckx_true" ;;
+	[[ -d "$name" || -e "$name" ]] && {
+		warn "$name já existe."
+		return "$FALSE"
+	}
 
-			*) warn "comando ${_ckxdb_cmd} não encontrado..." ;;
+	if mkdir "$name"; then
+		sucess "$name criado com sucesso."
+		return "$TRUE"
+	else
+		warn "Não foi possível criar o diretório $name."
+		return "$FALSE"
+	fi
+}
+
+ckxdb_title() {
+	msg "\e[1;31m"
+	msg '             ▄▄█▀▀▀█▄█████▀ ▀███▀▀███▀   ▀██▀'
+	msg '           ▄██▀     ▀█ ██   ▄█▀    ███▄  ▄█'
+	msg '           ██▀       ▀ ██ ▄█▀       ▀██▄█▀'
+	msg '           ██          █████▄         ███'
+	msg '           ██▄         ██  ███      ▄█▀▀██▄'
+	msg '           ▀██▄     ▄▀ ██   ▀██▄   ▄█   ▀██▄'
+	msg '             ▀▀█████▀▄████▄   ███▄██▄▄  ▄▄███▄'
+	msg " a soldier's bravery is only recognized on the battlefield"
+	msg "               --||////[CRYPTOKNIGHTX]////>"
+	msg "\e[m"
+}
+
+ckxdb() {
+	# Valor utilizado para parar o loop do
+	# modo interativo.
+	local CKXDB_BREAK
+
+	# Valores usados no modo interativo.
+	local __ckxdb__cmd    # input
+	local __ckxdb__cmd    # comando
+	local __ckxdb__arg    # diretório ou arquivo criptografado
+	local __ckxdb__target # nome do arquivo formatado
+
+	builtin cd "$CKX_DATA_DIR"
+
+ 	while [[ "${CKXDB_BREAK:=false}" = false ]]; do
+		read -rep 'ckx-database > ' __ckxdb__cmd_args
+
+		[[ -z "$__ckxdb__cmd_args" ]] && continue
+
+		set -- $__ckxdb__cmd_args
+		declare __ckxdb__cmd="$1"
+		declare __ckxdb__arg="${2%/}"
+		declare __ckxdb__target="${__ckxdb__arg%.tar.gpg}"
+
+		case "${__ckxdb__cmd}" in
+			h*)      ckxdb_help                               ;;
+			ls|lis*) ckxdb_list                               ;;
+			cd|sel*) ckxdb_cd     "$__ckxdb__arg"             ;;
+			rm|rem*) ckxdb_rm     "$__ckxdb__arg"             ;;
+			cr*)     ckxdb_create "$__ckxdb__arg"             ;;
+			cl*)     clear                                    ;;
+			exit)    exit "$TRUE"                             ;;
+			'')      :                                        ;;
+			*) warn "O comando '"$__ckxdb__cmd"' é inválido." ;;
 		esac
 	done
 
-	cd "${_ckxdb_arg%.tar.gpg}"
+	builtin cd "$__ckxdb__target"
 
 	ckxdb_title
 
-	warn "utilize 'exit' para criptografar os arquivos em $PWD"
+	warn "Utilize 'exit' para criptografar os arquivos em $PWD"
 	msg ""
 
-	(
-		export PS1='(CKX) \u@\h:\w\$ '
-		bash --norc
-	)
+	( bash -l )
 
-	ckxdb_encrypt -e "$_ckxdb_arg"
+	ckxdb_encrypt -e "$__ckxdb__target"
 
 	exit "$?"
 }
@@ -731,14 +722,12 @@ ckxdb()
 #
 ########################################################################################
 
-ckx_encrypt()
-{
+ckx_encrypt() {
 	local file="$1"
 
-	[[ -z "$file" ]] &&
-	{
+	[[ -z "$file" ]] && {
 		msg "ckx [-E|--encrypt] [FILE]"
-		exit "$_ckx_false"
+		exit "$FALSE"
 	}
 
 	[[ -d "$file" ]] && die "Não pode criptografar um diretório."
@@ -760,14 +749,12 @@ ckx_encrypt()
 	exit "$?"
 }
 
-ckx_decrypt()
-{
+ckx_decrypt() {
 	local file="$1"
 
-	[[ -z "$file" ]] &&
-	{
+	[[ -z "$file" ]] && {
 		msg "ckx [-D|--decrypt] [FILE]"
-		exit "$_ckx_false"
+		exit "$FALSE"
 	}
 
 	[[ -d "$file" ]] && die "Não pode descriptografar um diretório."
@@ -785,7 +772,10 @@ ckx_decrypt()
 #----------------------------------------------------------------------------------+
 ####################################### MAIN #####################################
 
-(($# == 0)) && short_license
+(( $# == 0 )) && {
+	display_default_message
+	ckxdb
+}
 
 case "$1" in
 	-s|--start) ckxdb ;;
@@ -796,7 +786,7 @@ case "$1" in
 
 	-v|--version) display_version ;;
 
-	--configure-encryption) config_gpg ;;
+	--configure) config_gpg ;;
 
 	-E|--encrypt) ckx_encrypt "$2" ;;
 
@@ -805,7 +795,7 @@ case "$1" in
 	*) display_error "$1" ;;
 esac
 
-exit "$_ckx_true"
+exit "$?"
 
 ##################################### END MAIN ###################################
 #----------------------------------------------------------------------------------+
