@@ -12,7 +12,7 @@
 
 <div align="center">
 <a href="https://www.gnu.org/software/bash/" target="_blank"><img src="https://badgen.net/badge/Made with/Bash/green?icon"></a>
-<img src="https://badgen.net/badge/Version/0.0.5/red?icon">
+<img src="https://badgen.net/badge/Version/0.0.6/red?icon">
 <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank"><img src="https://badgen.net/badge/Free Software/GPLv3.0+/black?icon"></a>
 </div>
 
