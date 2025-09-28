@@ -386,7 +386,7 @@ ckxdb_create() {
 		return "$FALSE"
 	}
 
-	[[ -d "$name" || -e "$name" ]] && {
+	[[ -d "$name" || -e "$name" || -e "${name}.ckx" ]] && {
 		warn "$name já existe."
 		return "$FALSE"
 	}
@@ -436,7 +436,7 @@ ckxdb() {
 			__ckxdb__arg="${2%/}"
 			__ckxdb__target="${__ckxdb__arg%.ckx}"
 			__ckxdb__path="${CKX_DATA_DIR}/${__ckxdb__target}"
-			case "${__ckxdb__cmd}" in
+			case "${__ckxdb__cmd,,}" in
 				h*) ckxdb_help ;;
 				l*) ckxdb_list ;;
 				cd | sel*) ckxdb_cd "$__ckxdb__arg" ;;
