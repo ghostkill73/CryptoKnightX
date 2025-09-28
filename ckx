@@ -498,8 +498,8 @@ ckx_decrypt() {
 		exit "$FALSE"
 	}
 
-	[[ -d "$file" || "${file#*.}" == "gpg" ]] &&
-		fatal "Só pode criptografar arquivos GPG."
+	[[ -d "$file" || ! "${file#*.}" == "gpg" ]] &&
+		fatal "Só pode descriptografar arquivos GPG."
 	[[ -e "$file" ]] || fatal "$file não existe."
 
 	gpg -o "${file%.gpg}" --no-symkey-cache -d "$file" ||
