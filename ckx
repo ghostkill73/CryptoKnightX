@@ -163,6 +163,8 @@ msg() {
 
 error() {
 	msg "\e[1;31m[!] ${*}\e[m"
+
+	return "$FALSE"
 }
 
 fatal() {
@@ -264,12 +266,12 @@ gpg_encrypt_dir() {
 	local dir="$1"
 	local out="$2"
 	: "${out:=${dir}.ckx}"
-	tar -czf - "$dir" | gpg --yes "${GPG_ENC_OPTS[@]}" -c -o "$out"
+	tar -cf - "$dir" | gpg --yes "${GPG_ENC_OPTS[@]}" -c -o "$out"
 }
 
 gpg_decrypt_dir() {
 	local dir="$1"
-	gpg "${GPG_DEC_OPTS[@]}" -d "$dir" | tar -xzf -
+	gpg "${GPG_DEC_OPTS[@]}" -d "$dir" | tar -xf -
 }
 
 ########################################################################################
@@ -342,9 +344,13 @@ ckxdb_cd() {
 	}
 
 	[[ -e "$target" ]] && {
-		ckxdb_decrypt "$target"
-		CKXDB_BREAK=0
-		return "$TRUE"
+		if ckxdb_decrypt "$target"; then
+			CKXDB_BREAK=0
+			return "$TRUE"
+		else
+			CKXDB_BREAK=1
+			return "$FALSE"
+		fi
 	}
 
 	warn "$target não existe."
