@@ -34,7 +34,7 @@
 #
 # Dependências fundamentais:
 #	- GNU Tar 1.30+
-#	- GNU Privacy Guard (gpg) 2.2+
+#	- GNU Privacy Guard (gpg) 2.2.7+
 #	- GNU Bash (Bourne-Again Shell) 3+
 # *** o software ainda está em fase de testes, a versão das dependências
 # podem não corresponder com oque está sendo exigido. ***
@@ -89,20 +89,20 @@
 #	Repositório: https://github.com/ghostkill73/CryptoKnightX
 #
 #----------------------------------------------------------------------------------+
+# shellcheck disable=SC2155
+# shellcheck disable=SC2164
 
 ########################################################################################
 #
-# Verificando dependências
+# DEPS
 #
 ########################################################################################
 
-# Verificando se gpg está instalado
 [[ -n "$(type -P gpg)" ]] || {
 	echo "$0: 'gpg' não está instalado em seu sistema."
 	exit 1
 }
 
-# Verificando se tar está instalado
 [[ -n "$(type -P tar)" ]] || {
 	echo "$0: 'tar' não está instalado em seu sistema."
 	exit 1
@@ -110,50 +110,46 @@
 
 ########################################################################################
 #
-# Variáveis e configurações globais
+# CONFIGS
 #
 ########################################################################################
 
-# Verificando se $HOME está definido.
-: "${HOME?"a variável HOME não está definida."}"
-
 declare SOFTWARE_NAME="CryptoKnightX"
-declare SOFTWARE_VERSION="v0.0.6"
+declare SOFTWARE_VERSION="v0.0.7"
 
-declare CKX_DEFAULT_DIR="$HOME/.local/share/ckx"
-declare CKX_CONFIGS_DIR="${CKX_DEFAULT_DIR}/lib"
-declare CKX_DATA_DIR="${CKX_DEFAULT_DIR}/data"
+declare CKX_DEFAULT_DIR="${XDG_DATA_HOME:=${HOME:=/home/$USER}/.local/share}/ckx"
+declare CKX_CONFIGS_DIR="${CKX_DEFAULT_DIR}/config"
 
 declare -i TRUE=0
 declare -i FALSE=1
 declare -i ERROR=2
 
-# Verificando se $HOME/.ckx existe, caso contrário cria o diretório.
-[[ -d "$CKX_DEFAULT_DIR" ]] || {
-	mkdir -p "$CKX_DEFAULT_DIR"
-	mkdir -p "$CKX_CONFIGS_DIR"
-	mkdir -p "$CKX_DATA_DIR"
-}
+export GPG_TTY=$(tty)
 
 ########################################################################################
 #
-# GPG Configs
+# CONFIG FILE
 #
 ########################################################################################
 
-source "${CKX_CONFIGS_DIR}"/gpg.conf 2>&-
+# shellcheck disable=SC1091
+source "${CKX_CONFIGS_DIR}/ckx.conf" 2>&-
 
-: "${s2k_mode:=3}"
-: "${s2k_count:=65536}"
-: "${s2k_digest_algo:=SHA256}"
-: "${s2k_cipher_algo:=AES256}"
-[[ "${__gpg__use_symkey:=true}" = true ]] || {
-	[[ -z "${__gpg__recipient}" ]] && {
-		echo "A chave privada não foi configurada corretamente."
-		echo "Utilize 'ckx --configure' para escolher a chave privada."
-	}
-}
-: "${__gpg__recipient:=none}"
+: "${S2K_MODE:=3}"
+: "${S2K_COUNT:=65011712}"
+: "${S2K_DIGEST_ALGO:=SHA512}"
+: "${S2K_CIPHER_ALGO:=TWOFISH}"
+
+declare -ar GPG_ENC_OPTS=(
+	--quiet
+	--no-symkey-cache
+	--compress-algo 0
+	--s2k-mode "$S2K_MODE"
+	--s2k-count "$S2K_COUNT"
+	--s2k-digest-algo "$S2K_DIGEST_ALGO"
+	--s2k-cipher-algo "$S2K_CIPHER_ALGO"
+)
+declare -ar GPG_DEC_OPTS=( --yes --quiet --no-symkey-cache )
 
 ########################################################################################
 #
@@ -165,8 +161,12 @@ msg() {
 	printf '%b\n' "$*" >&2
 }
 
-die() {
-	msg "\e[1;41m[!] ${*}\e[m"
+error() {
+	msg "\e[1;31m[!] ${*}\e[m"
+}
+
+fatal() {
+	msg "\e[1;41m[!!] ${*}\e[m"
 
 	exit "$ERROR"
 }
@@ -219,7 +219,7 @@ display_version() {
 }
 
 display_error() {
-	msg "A opção '"$1"' não existe"
+	msg "A opção \"$1\" não existe"
 	msg "Utilize 'ckx --help' para mais detalhes."
 
 	exit "$FALSE"
@@ -229,11 +229,11 @@ display_help() {
 	display_default_message
 	msg ""
 	msg " Exemplos:"
-	msg "  ckx   (Nenhuma opção)"
+	msg "  ckx (Nenhuma opção)"
 	msg "         Inicia o modo shell interativo."
 	msg ""
-	msg "  ckx --encrypt <file>"
-	msg "         Criptografa um arquivo. Será exigido uma senha."
+	msg "  ckx --encrypt <file|dir>"
+	msg "         Criptografa um arquivo ou diretório. Será exigido uma senha."
 	msg ""
 	msg "  ckx --decrypt <file.gpg>"
 	msg "         Descriptografa um arquivo que esteja criptografado com gpg."
@@ -241,242 +241,35 @@ display_help() {
 	msg " Opções:"
 	msg ""
 	msg "  -h, --help       Exibe esta mensagem."
+	msg ""
 	msg "  -v, --version    Exibe a versão do software."
+	msg ""
 	msg "  -l, --license    Exibe a licença do software."
 	msg ""
-	msg "  -e, --encrypt    Criptografa um arquivo."
-	msg "  -d, --decrypt    Descriptografa um arquivo."
-	msg "  --configure      Opção para configurar a criptografia no"
-	msg "                    modo questionário."
+	msg "  -e, --encrypt    Criptografa um arquivo com GPG usando chave simétrica."
+	msg "                   É aplicado Tar + Gunzip caso seja um diretório."
+	msg ""
+	msg "  -d, --decrypt    Descriptografa um arquivo GPG."
 
 	exit "$TRUE"
 }
 
 ########################################################################################
 #
-# Questionário do argumento --configure
+# GPG
 #
 ########################################################################################
 
-config_gpg() {
-	# Valores usados na configuração do gpg
-	local __gpg__mode         # s2k-mode
-	local __gpg__int          # s2k-count
-	local __gpg__hash         # s2k-digest-algo
-	local __gpg__cipher       # s2k-cipher-algo
-	local __gpg__symkey       # chave simétrica ou assimétrica
-	local __gpg__email="none" # chave privada
-	local __gpg__line __gpg__secret_keys
+gpg_encrypt_dir() {
+	local dir="$1"
+	local out="$2"
+	: "${out:=${dir}.ckx}"
+	tar -czf - "$dir" | gpg --yes "${GPG_ENC_OPTS[@]}" -c -o "$out"
+}
 
-	[[ -d "$CKX_CONFIGS_DIR" ]] || mkdir "$CKX_CONFIGS_DIR"
-
-	display_default_message
-	msg ""
-	msg "Iniciando configuração de criptografia."
-	msg ""
-	msg "Definições atuais:"
-	msg ""
-	msg " Modo de operação          = ${s2k_mode}"
-	msg " Interações na senha       = ${s2k_count}"
-	msg " Algoritmo de hash         = ${s2k_digest_algo}"
-	msg " Algoritmo de criptografia = ${s2k_cipher_algo}"
-	[[ "$__gpg__use_symkey" = true ]] || {
-		msg " Usar chave privada        = ${__gpg__use_symkey}"
-		msg " Chave privada             = ${__gpg__recipient}"
-	}
-	msg ""
-
-	read -p "Deseja prosseguir com a configuração? (y/N): "
-	case "${REPLY,,}" in
-		y*) : ;;
-		n*)
-			warn "operação cancelada."
-			exit "$TRUE"
-			;;
-		*) die "Opção inválida: $REPLY" ;;
-	esac
-
-	############################################################
-	# s2k-mode
-	############################################################
-	msg "[s2k-mode] Modo de operação"
-	msg "Define de qual modo a senha mestre será utilizada para criptografar/descriptografar."
-	msg " 0: Simples          (Hash aplicada na senha uma vez)                       [Inseguro]"
-	msg " 1: Salteado         (Hash aplicada na senha uma vez com salt de 8 bytes)   [Itermediário]"
-	msg " 3: Salt + Interação (Hash aplicada na senha 'N' vezes com salt de 8 bytes) [Melhor opção]"
-
-	read -p "Digite o NÚMERO da opção (padrão = 3): "
-	case "$REPLY" in
-		0|1|3) __gpg__mode=$REPLY ;;
-		*)     __gpg__mode=3      ;;
-	esac
-	warn "s2k-mode=${__gpg__mode}"
-	msg ""
-
-	############################################################
-	# s2k-count
-	############################################################
-	msg "[s2k-count] Número de interações"
-	msg "Se o 's2k-mode' foi definido como 3, o s2k-cont define a quantia de interações."
-	msg "Suporta de 1,024 até 65,011,712 interações."
-	msg "Quanto maior for o número de interações mais lento será para criptografar ou descriptografar."
-
-	read -p "Digite a quantia (padrão = 65536): " __gpg__int
-	declare __gpg__int="${__gpg__int//,}"
-	if [[ -z "${__gpg__int//[0-9]}" ]]; then
-		[[ "$__gpg__int" -gt '65011712' ]] &&
-			declare __gpg__int=65011712
-
-		[[ "$__gpg__int" -lt '1024' ]] &&
-			declare __gpg__int=1024
-	else
-		die "O valor fornecido deve ser um inteiro de 1,024 até 65,011,712."
-	fi
-	warn "s2k-digest-algo=${__gpg__int}"
-	msg ""
-
-	############################################################
-	# s2k-digest-algo
-	############################################################
-	msg "[s2k-digest-algo] função hash"
-	msg "Define qual a função hash que será utilizada nas senhas."
-	msg " 1) SHA1"
-	msg " 2) RIPEMD160"
-	msg " 3) SHA224"
-	msg " 4) SHA256"
-	msg " 5) SHA384"
-	msg " 6) SHA512"
-	msg "Recomendável usar o algoritmo SHA512."
-
-	read -p "Digite o NÚMERO opção (padrão = SHA256): "
-	case "${REPLY,,}" in
-		1|sha1*)   __gpg__hash=SHA1      ;;
-		2|rip*)    __gpg__hash=RIPEMD160 ;;
-		3|sha22*)  __gpg__hash=SHA224    ;;
-		4|sha25*)  __gpg__hash=SHA256    ;;
-		5|sha3*)   __gpg__hash=SHA384    ;;
-		6|sha5*)   __gpg__hash=SHA512    ;;
-		*)         __gpg__hash=SHA256    ;;
-	esac
-	warn "s2k-digest-algo=${__gpg__hash}"
-	msg ""
-
-	############################################################
-	# s2k-cipher-algo
-	############################################################
-	msg "[s2k-cipher-algo] Algoritmo de criptografia"
-	msg "Define o algoritmo de criptografia que será utilizado."
-	msg " 1)  IDEA"
-	msg " 2)  3DES"
-	msg " 3)  CAST5"
-	msg " 4)  BLOWFISH"
-	msg " 5)  AES"
-	msg " 6)  AES192"
-	msg " 7)  AES256"
-	msg " 8)  TWOFISH"
-	msg " 9)  CAMELLIA128"
-	msg " 10) CAMELLIA192"
-	msg " 11) CAMELLIA256"
-	msg "Recomenda-se utilizar AES256, CARAMELLIA256 ou TWOFISH"
-	msg "TWOFISH é mais forte comparado a AES/CARAMELLIA, porém é mais"
-	msg "lento para o processo de criptografia ou descriptografia."
-
-	read -p "Digite o NÚMERO da opção (padrão = AES256): "
-	case "${REPLY,,}" in
-		1|ide*)         __gpg__cipher=IDEA        ;;
-		2|3de*)         __gpg__cipher=3DES        ;;
-		3|cas*)         __gpg__cipher=CAST5       ;;
-		4|blow*)        __gpg__cipher=BLOWFISH    ;;
-		5|aes)          __gpg__cipher=AES         ;;
-		6|aes1*)        __gpg__cipher=AES192      ;;
-		7|aes2*)        __gpg__cipher=AES256      ;;
-		8|two*)         __gpg__cipher=TWOFISH     ;;
-		9|camellia12*)  __gpg__cipher=CAMELLIA128 ;;
-		10|camellia19*) __gpg__cipher=CAMELLIA192 ;;
-		11|camellia2*)  __gpg__cipher=CAMELLIA256 ;;
-		*)              __gpg__cipher=AES256      ;;
-	esac
-	warn "s2k-cipher-algo=${__gpg__cipher}"
-	msg ""
-
-	############################################################
-	# Chave simétrica/assimétrica
-	############################################################
-	msg "[SYMKEY] Utilizar chave simétrica"
-	msg "Define se o CKX irá utilizar uma senha ou uma chave privada"
-	msg "do seu chaveiro gpg para criptografar os arquivos."
-	msg " 1) True  (Utilizar senha)"
-	msg " 2) False (Utilizar chave privada)"
-	msg "Ao utilizar uma chave privada, você precisará digitar a senha apenas"
-	msg "ao descritografar o diretório. Porém você terá que ter a responsabilidade"
-	msg "de armazenar esta chave com segurança."
-	msg "Para gerar uma chave você deve utilizar o comando 'gpg --full-generate-key'."
-
-	read -p "Digite o NÚMERO da opção (padrão = True): "
-	case "${REPLY,,}" in
-		1|true)  __gpg__symkey=true  ;;
-		2|false) __gpg__symkey=false ;;
-		*)       __gpg__symkey=true  ;;
-	esac
-	warn "__gpg__use_symkey=${__gpg__symkey}"
-
-	[[ "$__gpg__symkey" = true ]] || {
-		msg ""
-		msg "[PRIVATE-KEY] Email da chave privada"
-		msg "Define a chave privada que será utilizada."
-
-		__gpg__secret_keys=$(
-			while IFS= read -r __gpg__line; do
-				[[ "$__gpg__line" =~ '@' ]] && msg "$__gpg__line"
-			done < <(gpg --list-secret-keys)
-		)
-
-		if [[ -n "$__gpg__secret_keys" ]]; then
-			msg "$__gpg__secret_keys"
-		else
-			warn "Nenhuma chave foi encontrada."
-		 	warn "Utilize o comando 'gpg --full-generate-key' para gerar uma chave."
-			exit "$FALSE"
-		fi
-
-		read -p "Digite o email de sua chave privada: " __gpg__email
-
-		[[ -z "$__gpg__email" ]] && die "Nenhuma chave foi especificada."
-	}
-	msg ""
-
-	############################################################
-	# Resultado
-	############################################################
-	msg " Modo de operação          = ${__gpg__mode}"
-	msg " Interações na senha       = ${__gpg__int}"
-	msg " Algoritmo de hash         = ${__gpg__hash}"
-	msg " Algoritmo de criptografia = ${__gpg__cipher}"
-	[[ "$__gpg__email" != none ]] && {
-		msg " Usar chave privada        = ${__gpg__use_symkey}"
-		msg " Chave privada             = ${__gpg__email}"
-	}
-	msg ""
-
-	read -p "Atualizar configurações? (y/N): "
-	case "${REPLY,,}" in
-		y*) : ;;
-		n*)
-			warn "Operação cancelada"
-			exit "$TRUE"
-			;;
-		*) die "Opção inválida." ;;
-	esac
-
-	( echo "# https://www.gnupg.org/documentation/manpage.html"
-	echo "declare s2k_mode=${__gpg__mode}"
-	echo "declare s2k_count=${__gpg__int}"
-	echo "declare s2k_digest_algo=${__gpg__hash}"
-	echo "declare s2k_cipher_algo=${__gpg__cipher}"
-	echo "declare __gpg__use_symkey=${__gpg__symkey}"
-	echo "declare __gpg__recipient=${__gpg__email}" ) > "${CKX_CONFIGS_DIR}"/gpg.conf
-
-	exit "$?"
+gpg_decrypt_dir() {
+	local dir="$1"
+	gpg "${GPG_DEC_OPTS[@]}" -d "$dir" | tar -xzf -
 }
 
 ########################################################################################
@@ -485,102 +278,7 @@ config_gpg() {
 #
 ########################################################################################
 
-ckxdb_encrypt() {
-	local _enc_opt="$1"
-	local _enc_dir="$2"
-
-	trap '' SIGINT SIGQUIT
-
-	case "$_enc_opt" in
-		-d) # descriptografando
-			warn "descriptografando ${_enc_dir}, aguarde..."
-
-			if [[ "$__gpg__use_symkey" = 'true' ]]; then
-				gpg --quiet -o "${_enc_dir%.gpg}" \
-					--no-symkey-cache \
-					-d "${_enc_dir}" \
-					&& sucess "${_enc_dir} descriptografado." \
-					|| die "Não foi possível descriptografar: ${_enc_dir}."
-			else
-				gpg --quiet \
-					-o "${_enc_dir%.gpg}" \
-					-d \
-					--recipient "${__gpg__recipient}" \
-					"${_enc_dir}" \
-					&& sucess "${_enc_dir} descriptografado." \
-					|| die "Não foi possível descriptografar: ${_enc_dir}."
-			fi
-
-			tar -xf "${_enc_dir%.gpg}" \
-				&& sucess "${_enc_dir%.gpg} descompactado." \
-				|| die "Não foi possível compactar: ${_enc_dir} e ${_enc_dir%.gpg}."
-
-			rm -r "${_enc_dir}" "${_enc_dir%.gpg}" \
-				&& sucess "${_enc_dir} e ${_enc_dir%.gpg} removidos." \
-				|| die "Não foi possível remover: ${_enc_dir} e ${_enc_dir%.gpg}."
-
-			sucess "${_enc_dir} descriptografado com sucesso."
-			;;
-
-		-e) # criptografando
-			cd "$CKX_DATA_DIR"
-
-			if [[ -d "${_enc_dir}" ]]; then
-				declare _enc_dir_1="${_enc_dir}.tar"
-				declare _enc_dir_2="${_enc_dir}"
-			else
-				declare _enc_dir_1="${_enc_dir%.gpg}"
-				declare _enc_dir_2="${_enc_dir%.tar.gpg}"
-			fi
-
-			tar -cf "${_enc_dir_1}" "${_enc_dir_2}" \
-				&& sucess "${_enc_dir_2} compactado." \
-				|| die "Não foi possível compactar: ${_enc_dir_2}."
-
-			warn "digite a senha de acesso e aguarde o diretório ser criptografado..."
-
-			if [[ "$__gpg__use_symkey" = 'true' ]]; then
-				if [[ "$s2k_mode" = '3' ]]; then
-					gpg --no-symkey-cache \
-						--compress-algo 0 \
-						--s2k-mode "${s2k_mode}" \
-						--s2k-count "${s2k_count}" \
-						--s2k-digest-algo "${s2k_digest_algo}" \
-						--s2k-cipher-algo "${s2k_cipher_algo}" \
-						-c "${_enc_dir_1}" \
-						&& sucess "${_enc_dir_1} criptografado com ${s2k_cipher_algo}." \
-						|| die "Não foi possível criptografar: ${_enc_dir_1}."
-				else
-					gpg --no-symkey-cache \
-						--compress-algo 0 \
-						--s2k-mode "${s2k_mode}" \
-						--s2k-digest-algo "${s2k_digest_algo}" \
-						--s2k-cipher-algo "${s2k_cipher_algo}" \
-						-c "${_enc_dir_1}" \
-						&& sucess "${_enc_dir_1} criptografado com ${s2k_cipher_algo}." \
-						|| die "Não foi possível criptografar: ${_enc_dir_1}."
-				fi
-			else
-				gpg --encrypt \
-					-o "${_enc_dir_1}.gpg" \
-					--recipient "${__gpg__recipient}" \
-					"${_enc_dir_1}" \
-					&& sucess "${_enc_dir_1} criptografado com sua chave privada." \
-					|| die "Não foi possível criptografar: ${_enc_dir_1}."
-			fi
-
-			rm -r "${_enc_dir_1}" "${_enc_dir_2}" \
-				&& sucess "${_enc_dir_1} e ${_enc_dir_2} removidos." \
-				|| die "Não foi possível remover: ${_enc_dir_1} e ${_enc_dir_2}."
-
-			sucess "${_enc_dir} criptografado com sucesso."
-			;;
-	esac
-
-	trap - SIGINT SIGQUIT
-}
-
-ckxdb_help(){
+ckxdb_help() {
 	msg "SELECT -> seleciona um diretório (SELECT 'dir')"
 	msg "CREATE -> cria um novo diretório (CREATE 'dir')"
 	msg "REMOVE -> remove um diretório    (REMOVE 'dir')"
@@ -588,83 +286,6 @@ ckxdb_help(){
 	msg "CLEAR  -> limpa a tela"
 	msg "HELP   -> exibe esta lista"
 	msg "EXIT   -> termina o software"
-}
-
-ckxdb_list() {
-	local data
-
-	for data in "$CKX_DATA_DIR"/*; {
-		if [[ -d "$data" ]]; then
-			msg "\e[1;31m[!] ${data##*/} (descriptografado)\e[m"
-		elif [[ -e "$data" ]]; then
-			msg "\e[1;32m[+] ${data##*/}\e[m"
-		fi
-	}
-}
-
-ckxdb_cd() {
-	local target="$1"
-	declare -g CKXDB_BREAK
-
-	[[ -d "$target" ]] && {
-		CKXDB_BREAK=true
-		return "$TRUE"
-	}
-
-	[[ -e "$target" ]] && {
-		ckxdb_encrypt -d "$target"
-		CKXDB_BREAK=true
-		return "$TRUE"
-	}
-
-	warn "$target não existe."
-	return "$FALSE"
-}
-
-ckxdb_rm() {
-	local target="$1"
-
-	[[ -d "$target" || -e "$target" ]] || {
-		warn "$target não existe."
-		return "$FALSE"
-	}
-
-	read -rp "Você deseja remover $target? (yes/N*) "
-	if [[ "$REPLY" = yes ]]; then
-		read -rp "Certeza? (yes/N*) "
-		if [[ "$REPLY" = yes ]]; then
-			if rm -rf "$target"; then
-				sucess "$target removido com sucesso."
-				return "$TRUE"
-			else
-				warn "Não foi possível remover $target."
-				return "$FALSE"
-			fi
-		else
-			warn "Operação cancelada."
-			return "$TRUE"
-		fi
-	else
-		warn "Operação cancelada."
-		return "$TRUE"
-	fi
-}
-
-ckxdb_create() {
-	local name="$1"
-
-	[[ -d "$name" || -e "$name" ]] && {
-		warn "$name já existe."
-		return "$FALSE"
-	}
-
-	if mkdir "$name"; then
-		sucess "$name criado com sucesso."
-		return "$TRUE"
-	else
-		warn "Não foi possível criar o diretório $name."
-		return "$FALSE"
-	fi
 }
 
 ckxdb_title() {
@@ -681,52 +302,164 @@ ckxdb_title() {
 	msg "\e[m"
 }
 
-ckxdb() {
-	# Valor utilizado para parar o loop do
-	# modo interativo.
-	local CKXDB_BREAK
+ckxdb_decrypt() {
+	local dir="$1"
+	if gpg_decrypt_dir "$dir"; then
+		sucess "$dir descriptografado com sucesso."
+	else
+		error "Algum erro ocorreu ao descriptografar $dir."
+	fi
+}
 
-	# Valores usados no modo interativo.
-	local __ckxdb__cmd    # input
-	local __ckxdb__cmd    # comando
-	local __ckxdb__arg    # diretório ou arquivo criptografado
-	local __ckxdb__target # nome do arquivo formatado
+ckxdb_encrypt() {
+	local dir="$1"
+	dd if=/dev/random of="$dir"/.entropy bs=1M count=1 &>/dev/null
+	if gpg_encrypt_dir "$dir"; then
+		sucess "$dir criptografado com sucesso."
+	else
+		error "Algum erro ocorreu ao criptografar $dir."
+	fi
+}
+
+ckxdb_list() {
+	local data
+
+	for data in "$CKX_DATA_DIR"/*; {
+		if [[ -d "$data" ]]; then
+			msg "\e[1;31m[!] ${data##*/} (descriptografado)\e[m"
+		elif [[ -e "$data" ]]; then
+			msg "\e[1;32m[+] ${data##*/}\e[m"
+		fi
+	}
+}
+
+ckxdb_cd() {
+	local target="$1"
+
+	[[ -d "$target" ]] && {
+		CKXDB_BREAK=0
+		return "$TRUE"
+	}
+
+	[[ -e "$target" ]] && {
+		ckxdb_decrypt "$target"
+		CKXDB_BREAK=0
+		return "$TRUE"
+	}
+
+	warn "$target não existe."
+	return "$FALSE"
+}
+
+ckxdb_rm() {
+	local target="$1"
+
+	[[ -z "$target" ]] && {
+		warn "Nome não fornecido."
+		return "$FALSE"
+	}
+
+	[[ -d "$target" || -e "$target" ]] || {
+		warn "$target não existe."
+		return "$FALSE"
+	}
+
+	read -rp "Deseja remover $target? (yes/N*) "
+	[[ "$REPLY" == yes ]] && {
+		if rm -rf "$target"; then
+			sucess "$target removido com sucesso."
+			return "$TRUE"
+		else
+			warn "Não foi possível remover $target."
+			return "$FALSE"
+		fi
+	}
+	warn "Operação cancelada."
+	return "$FALSE"
+}
+
+ckxdb_create() {
+	local name="$1"
+
+	[[ -z "$name" ]] && {
+		warn "Nome do diretório não fornecido."
+		return "$FALSE"
+	}
+
+	[[ -d "$name" || -e "$name" || -e "${name}.ckx" ]] && {
+		warn "$name já existe."
+		return "$FALSE"
+	}
+
+	if mkdir "$name"; then
+		sucess "$name criado com sucesso."
+		return "$TRUE"
+	else
+		warn "Não foi possível criar o diretório $name."
+		return "$FALSE"
+	fi
+}
+
+ckxdb_run_shell() {
+	local path="$1"
+	(
+		export HISTFILE="$path/.bash_history"
+		export HISTCONTROL=ignoreboth
+		export HISTSIZE=100
+		exec bash --norc --noprofile -l -i
+	)
+}
+
+ckxdb() {
+	declare -g CKX_DATA_DIR="${CKX_DEFAULT_DIR}/data"
+
+	[[ -d "$CKX_DEFAULT_DIR" ]] ||
+		mkdir -p "$CKX_CONFIGS_DIR" "$CKX_DATA_DIR"
 
 	builtin cd "$CKX_DATA_DIR"
 
- 	while [[ "${CKXDB_BREAK:=false}" = false ]]; do
-		read -rep 'ckx-database > ' __ckxdb__cmd_args
+	declare -g CKXDB_BREAK=1
+	local __ckxdb__cmd
+	local __ckxdb__cmd_args
+	local __ckxdb__arg
+	local __ckxdb__target
+	local __ckxdb__path
+	while :; do
+		while (( CKXDB_BREAK )); do
+			read -rep 'ckx-database > ' __ckxdb__cmd_args
 
-		[[ -z "$__ckxdb__cmd_args" ]] && continue
+			[[ -z "$__ckxdb__cmd_args" ]] && continue
 
-		set -- $__ckxdb__cmd_args
-		declare __ckxdb__cmd="$1"
-		declare __ckxdb__arg="${2%/}"
-		declare __ckxdb__target="${__ckxdb__arg%.tar.gpg}"
+			# shellcheck disable=SC2086
+			set -- $__ckxdb__cmd_args
+			__ckxdb__cmd="$1"
+			__ckxdb__arg="${2%/}"
+			__ckxdb__target="${__ckxdb__arg%.ckx}"
+			__ckxdb__path="${CKX_DATA_DIR}/${__ckxdb__target}"
+			case "${__ckxdb__cmd,,}" in
+				h*) ckxdb_help ;;
+				l*) ckxdb_list ;;
+				cd | sel*) ckxdb_cd "$__ckxdb__arg" ;;
+				rm | rem*) ckxdb_rm "$__ckxdb__arg" ;;
+				cr*) ckxdb_create "$__ckxdb__arg" ;;
+				cl*) clear ;;
+				exit) exit "$TRUE" ;;
+				*) warn "O comando \"$__ckxdb__cmd\" é inválido." ;;
+			esac
+		done
 
-		case "${__ckxdb__cmd}" in
-			h*)      ckxdb_help                               ;;
-			ls|lis*) ckxdb_list                               ;;
-			cd|sel*) ckxdb_cd     "$__ckxdb__arg"             ;;
-			rm|rem*) ckxdb_rm     "$__ckxdb__arg"             ;;
-			cr*)     ckxdb_create "$__ckxdb__arg"             ;;
-			cl*)     clear                                    ;;
-			exit)    exit "$TRUE"                             ;;
-			'')      :                                        ;;
-			*) warn "O comando '"$__ckxdb__cmd"' é inválido." ;;
-		esac
+		builtin cd "$__ckxdb__target"
+
+		ckxdb_title
+		warn "Utilize 'exit' para criptografar os arquivos em $PWD"
+		msg ""
+
+		ckxdb_run_shell "$__ckxdb__path"
+		CKXDB_BREAK=1
+
+		builtin cd "$CKX_DATA_DIR"
+		ckxdb_encrypt "$__ckxdb__target" && rm -r "$__ckxdb__target"
 	done
-
-	builtin cd "$__ckxdb__target"
-
-	ckxdb_title
-
-	warn "Utilize 'exit' para criptografar os arquivos em $PWD"
-	msg ""
-
-	( bash -l )
-
-	ckxdb_encrypt -e "$__ckxdb__target"
 
 	exit "$?"
 }
@@ -738,50 +471,39 @@ ckxdb() {
 ########################################################################################
 
 ckx_encrypt() {
-	local file="$1"
+	local file="${1%/}"
 
 	[[ -z "$file" ]] && {
-		msg "ckx [-E|--encrypt] [FILE]"
+		msg "ckx [-e|--encrypt] [FILE|DIR]"
 		exit "$FALSE"
 	}
 
-	[[ -d "$file" ]] && die "Não pode criptografar um diretório."
-	[[ -e "$file" ]] || die "$file não existe."
+	[[ -d "$file" ]] && {
+		gpg_encrypt_dir "$file" "${file}.tgz.gpg" ||
+			fatal "Algum erro ocorreu ao criptografar ${file}."
+		exit "$TRUE"
+	}
 
-	if gpg --no-symkey-cache \
-		--compress-algo 0 \
-		--s2k-mode 3 \
-		--s2k-count "$s2k_count" \
-		--s2k-digest-algo "$s2k_digest_algo" \
-		--s2k-cipher-algo "$s2k_cipher_algo" \
-		-c "$file"
-	then
-		sucess "${file} foi criptografado com sucesso."
-	else
-		die "Não foi possível criptografar: ${file}."
-	fi
+	[[ -e "$file" ]] || fatal "$file não existe."
 
-	exit "$?"
+	gpg "${GPG_ENC_OPTS[@]}" -o "${file}.gpg" -c "$file" ||
+		fatal "Algum erro ocorreu ao criptografar ${file}."
 }
 
 ckx_decrypt() {
 	local file="$1"
 
 	[[ -z "$file" ]] && {
-		msg "ckx [-D|--decrypt] [FILE]"
+		msg "ckx [-d|--decrypt] [FILE.gpg]"
 		exit "$FALSE"
 	}
 
-	[[ -d "$file" ]] && die "Não pode descriptografar um diretório."
-	[[ -e "$file" ]] || die "$file não existe."
+	[[ -d "$file" || "${file#*.}" == "gpg" ]] &&
+		fatal "Só pode criptografar arquivos GPG."
+	[[ -e "$file" ]] || fatal "$file não existe."
 
-	if gpg --no-symkey-cache -d "$file" > "${file%.gpg}"; then
-		sucess "${file} foi descriptografado com sucesso."
-	else
-		die "Não foi possível descriptografar: ${file}."
-	fi
-
-	exit "$?"
+	gpg -o "${file%.gpg}" --no-symkey-cache -d "$file" ||
+		fatal "Algum erro ocorreu ao descriptografar ${file}."
 }
 
 #----------------------------------------------------------------------------------+
