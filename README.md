@@ -31,12 +31,12 @@
 <h2 align="center">Dependências</h2>
 <p>Dependências necessárias para utilizar o software:</p>
 <ul>
-   <li><b><a href="https://www.gnu.org/software/tar/" target="_blank">GNU Tar</a> 1.30+</b></li>
-   <li><b><a href="https://www.gnu.org/software/bash/" target="_blank">GNU Bash</a> 3+</b></li>
-   <li><b><a href="https://gnupg.org/" target="_blank">gnupg</a> 2.2+</b></li>
+   <li><b>UNIX Tar</b></li>
+   <li><b><a href="https://www.gnu.org/software/bash/" target="_blank">Bash</a> 3+</b></li>
+   <li><b><a href="https://gnupg.org/" target="_blank">gnupg</a> 2.2.7+</b></li>
 </ul>
 
-<b>OBS: as versões exigidas podem não corresponder com a realidade, o software está em fase de testes.
+<b>OBS: As versões exigidas podem não corresponder com a realidade, o software está em fase de testes.
 provavelmente dependências mais antigas irão funcionar corretamente.</b>
 
 
@@ -74,6 +74,11 @@ provavelmente dependências mais antigas irão funcionar corretamente.</b>
     <tr>
        <td>Debian 13 (trixie)</td>
        <td>GPG: 2.4.7 | Tar: 1.35 | Bash: 5.2.37</td>
+       <td>ok</td>
+    </tr>
+    <tr>
+       <td>Termux 0.119-beta</td>
+       <td>GPG: 2.5.11 | Tar: 1.35 | Bash: 5.3.3</td>
        <td>ok</td>
     </tr>
   </tbody>
