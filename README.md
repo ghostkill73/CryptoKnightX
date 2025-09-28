@@ -12,7 +12,7 @@
 
 <div align="center">
 <a href="https://www.gnu.org/software/bash/" target="_blank"><img src="https://badgen.net/badge/Made with/Bash/green?icon"></a>
-<img src="https://badgen.net/badge/Version/0.0.6/red?icon">
+<img src="https://badgen.net/badge/Version/0.0.7/red?icon">
 <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank"><img src="https://badgen.net/badge/Free Software/GPLv3.0+/black?icon"></a>
 </div>
 
@@ -58,21 +58,23 @@ provavelmente dependências mais antigas irão funcionar corretamente.</b>
 <br>
 
 
-<!---TODO--->
+<!---TEST--->
 
+<h2 align="center">Ambientes testados:</h2>
 
-<h2 align="center">TO-DO</h2>
-
-* [ ] Documentação
-* [ ] Opção para configurações gerais
-* [ ] Interface mais intuitiva e informativa
-
-
-<!---DONATE--->
-
-
-<br>
-<div align="center">
-<h2>Donate</h2>
-<p>bitcoin: bc1qq77c3w5l97da0pjn6d4dx9zueys29p799q7heq</p>
-</div>
+<table align="center">
+  <thead>
+    <tr>
+      <th>OS</th>
+      <th>Dependências</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+       <td>Debian 13 (trixie)</td>
+       <td>GPG: 2.4.7 | Tar: 1.35 | Bash: 5.2.37</td>
+       <td>ok</td>
+    </tr>
+  </tbody>
+</table>

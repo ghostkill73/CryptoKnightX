@@ -115,7 +115,7 @@
 ########################################################################################
 
 declare SOFTWARE_NAME="CryptoKnightX"
-declare SOFTWARE_VERSION="v0.0.6"
+declare SOFTWARE_VERSION="v0.0.7"
 
 declare CKX_DEFAULT_DIR="${XDG_DATA_HOME:=${HOME:=/home/$USER}/.local/share}/ckx"
 declare CKX_CONFIGS_DIR="${CKX_DEFAULT_DIR}/config"
