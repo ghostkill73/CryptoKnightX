@@ -3,45 +3,34 @@
 <!---banner by _surowo (discord)--->
 </div>
 
-
 <!---CKX--->
-
 
 <br>
 <h1 align="center">CryptoKnightX</h1>
 
 <div align="center">
 <a href="https://www.gnu.org/software/bash/" target="_blank"><img src="https://badgen.net/badge/Made with/Bash/green?icon"></a>
-<img src="https://badgen.net/badge/Version/0.0.7/red?icon">
-<a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank"><img src="https://badgen.net/badge/Free Software/GPLv3.0+/black?icon"></a>
+<img src="https://badgen.net/badge/Version/0.0.8/red?icon">
+<a href="LICENSE" target="_blank"><img src="https://badgen.net/badge/License/MIT/black"></a>
 </div>
 
 <div align="center">
 <p>CryptoKnightX é uma ferramenta CLI para criptografar arquivos utilizando GnuPG.</p>
 <p>Mantenha a segurança e privacidade de seus arquivos importantes com simplicidade em seu terminal.</p>
-<p>O CKX é um fork do projeto Knight,
-<a href="https://notabug.org/slackjeff/knight" target="_blank">acesse aqui!</a></p>
 </div>
 
-
 <!---DEPENDENCIAS--->
-
 
 <br>
 <h2 align="center">Dependências</h2>
 <p>Dependências necessárias para utilizar o software:</p>
 <ul>
    <li><b>UNIX Tar</b></li>
-   <li><b><a href="https://www.gnu.org/software/bash/" target="_blank">Bash</a> 3+</b></li>
+   <li><b><a href="https://www.gnu.org/software/bash/" target="_blank">Bash</a> 4+</b></li>
    <li><b><a href="https://gnupg.org/" target="_blank">gnupg</a> 2.2.7+</b></li>
 </ul>
 
-<b>OBS: As versões exigidas podem não corresponder com a realidade, o software está em fase de testes.
-provavelmente dependências mais antigas irão funcionar corretamente.</b>
-
-
 <!---INSTALAÇÃO--->
-
 
 <br>
 <h2 align="center">Como instalar?</h2>
@@ -56,30 +45,3 @@ provavelmente dependências mais antigas irão funcionar corretamente.</b>
 <p><code>curl</code>:</p>
 <pre><code>curl -L https://raw.githubusercontent.com/ghostkill73/CryptoKnightX/main/ckx > ckx && chmod +x ckx</code></pre>
 <br>
-
-
-<!---TEST--->
-
-<h2 align="center">Ambientes testados:</h2>
-
-<table align="center">
-  <thead>
-    <tr>
-      <th>OS</th>
-      <th>Dependências</th>
-      <th>Status</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-       <td>Debian 13 (trixie)</td>
-       <td>GPG: 2.4.7 | Tar: 1.35 | Bash: 5.2.37</td>
-       <td>ok</td>
-    </tr>
-    <tr>
-       <td>Termux 0.119-beta</td>
-       <td>GPG: 2.5.11 | Tar: 1.35 | Bash: 5.3.3</td>
-       <td>ok</td>
-    </tr>
-  </tbody>
-</table>
