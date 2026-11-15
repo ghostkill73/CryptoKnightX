@@ -296,8 +296,7 @@ ckxdb_run_shell() {
  
 # TODO: Simplify this
 ckxdb() {
-	[[ -d "$CKX_DEFAULT_DIR" ]] || mkdir -p "$CKX_DATA_DIR"
-
+	[[ -d "$CKX_DATA_DIR" ]] || mkdir -p "$CKX_DATA_DIR"
 	builtin cd "$CKX_DATA_DIR"
 
 	declare -g CKXDB_BREAK=1
